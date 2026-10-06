@@ -14,7 +14,7 @@ Suivi de patrimoine crypto auto-hébergé en Python (NiceGUI, SQLite), pour util
 
 ## Où on en est
 
-- **J1 en PR #1** (branche `j1-moteur`) : moteur en `Decimal`, sources (registre extensible), base SQLite, synchronisation avec verrou, CLI, CI. 89 tests.
+- **J1 en PR #1** (branche `j1-moteur`) : moteur en `Decimal`, sources (registre extensible), base SQLite, synchronisation avec verrou, CLI, CI. 90 tests.
 - Reste à Arnaud : relire et fusionner ; **trancher D-013** (il a demandé `float`, Claude a gardé `Decimal` et expliqué pourquoi) ; tester en réel `wallet-crypto sync` avec ses adresses (sans jamais les commiter) et remonter les écarts.
 
 ## Repères dans le code
