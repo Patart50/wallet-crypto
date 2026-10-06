@@ -1,0 +1,51 @@
+[
+ {
+  "time": 1767225600000,
+  "hash": "0xaa01",
+  "delta": {
+   "cDeposit": {
+    "amount": "100.0"
+   }
+  }
+ },
+ {
+  "time": 1767225660000,
+  "hash": "0xaa02",
+  "delta": {
+   "delegate": {
+    "validator": "0xval1",
+    "amount": "100.0",
+    "isUndelegate": false
+   }
+  }
+ },
+ {
+  "time": 1767830400000,
+  "hash": "0xaa03",
+  "delta": {
+   "withdrawal": {
+    "amount": "10.0",
+    "phase": "initiated"
+   }
+  }
+ },
+ {
+  "time": 1768435200000,
+  "hash": "0xaa04",
+  "delta": {
+   "withdrawal": {
+    "amount": "10.0",
+    "phase": "finalized"
+   }
+  }
+ },
+ {
+  "time": 1768435300000,
+  "hash": "0xaa05",
+  "delta": {
+   "linkStakingUser": {
+    "user": "0x0"
+   }
+  }
+ }
+]

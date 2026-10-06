@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wallet-crypto"
+version = "0.1.0"
+description = "Suivi de patrimoine crypto auto-hébergé : wallets, staking, hold et trades Hyperliquid. Lecture seule, en français."
+readme = "README.md"
+license = "AGPL-3.0-or-later"
+license-files = ["LICENSE"]
+authors = [{ name = "Arnaud (Patart50)" }]
+requires-python = ">=3.11"
+dependencies = [
+    "sqlalchemy>=2.0",
+    "requests>=2.31",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Natural Language :: French",
+    "Topic :: Office/Business :: Financial",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[project.urls]
+Source = "https://github.com/Patart50/wallet-crypto"
+Sponsor = "https://github.com/sponsors/Patart50"
+
+[project.scripts]
+wallet-crypto = "wallet_crypto.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM"]
+ignore = ["E501"]

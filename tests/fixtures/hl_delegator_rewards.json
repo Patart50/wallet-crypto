@@ -1,0 +1,17 @@
+[
+ {
+  "time": 1767312000000,
+  "source": "delegation",
+  "totalAmount": "0.08"
+ },
+ {
+  "time": 1767398400000,
+  "source": "delegation",
+  "totalAmount": "0.081"
+ },
+ {
+  "time": 1767398400000,
+  "source": "commission",
+  "totalAmount": "0"
+ }
+]

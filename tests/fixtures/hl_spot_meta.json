@@ -1,0 +1,62 @@
+{
+ "tokens": [
+  {
+   "name": "USDC",
+   "index": 0
+  },
+  {
+   "name": "PURR",
+   "index": 1
+  },
+  {
+   "name": "HYPE",
+   "index": 150
+  },
+  {
+   "name": "UBTC",
+   "index": 197
+  },
+  {
+   "name": "FOO",
+   "index": 300
+  },
+  {
+   "name": "BAR",
+   "index": 301
+  }
+ ],
+ "universe": [
+  {
+   "name": "PURR/USDC",
+   "tokens": [
+    1,
+    0
+   ],
+   "index": 0
+  },
+  {
+   "name": "@107",
+   "tokens": [
+    150,
+    0
+   ],
+   "index": 107
+  },
+  {
+   "name": "@142",
+   "tokens": [
+    197,
+    0
+   ],
+   "index": 142
+  },
+  {
+   "name": "@500",
+   "tokens": [
+    300,
+    301
+   ],
+   "index": 500
+  }
+ ]
+}

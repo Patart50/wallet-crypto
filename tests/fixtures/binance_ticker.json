@@ -1,0 +1,30 @@
+[
+ {
+  "symbol": "BTCUSDT",
+  "price": "81000.00"
+ },
+ {
+  "symbol": "HYPEUSDT",
+  "price": "41.00"
+ },
+ {
+  "symbol": "WCTUSDT",
+  "price": "0.3000"
+ },
+ {
+  "symbol": "EURUSDT",
+  "price": "1.08"
+ },
+ {
+  "symbol": "FOOBTC",
+  "price": "0.0001"
+ },
+ {
+  "symbol": "BARUSDC",
+  "price": "2.5"
+ },
+ {
+  "symbol": "ZERO",
+  "price": "0"
+ }
+]
