@@ -1,0 +1,18 @@
+{
+ "data": {
+  "tokens": [
+   {
+    "network": "solana-mainnet",
+    "tokenAddress": null,
+    "tokenBalance": "2500000000",
+    "tokenMetadata": {},
+    "tokenPrices": [
+     {
+      "currency": "usd",
+      "value": "150"
+     }
+    ]
+   }
+  ]
+ }
+}

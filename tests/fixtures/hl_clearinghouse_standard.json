@@ -1,0 +1,24 @@
+{
+ "marginSummary": {
+  "accountValue": "1500.25",
+  "totalMarginUsed": "120.0"
+ },
+ "withdrawable": "1380.25",
+ "assetPositions": [
+  {
+   "position": {
+    "coin": "SOL",
+    "szi": "-10",
+    "entryPx": "150",
+    "positionValue": "1450",
+    "unrealizedPnl": "50",
+    "returnOnEquity": "0.4166",
+    "liquidationPx": null,
+    "leverage": {
+     "type": "isolated",
+     "value": 12
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,24 @@
+[
+ {
+  "time": 1767254400000,
+  "hash": "0x0",
+  "delta": {
+   "type": "funding",
+   "coin": "BTC",
+   "usdc": "-0.42",
+   "szi": "0.05",
+   "fundingRate": "0.0000125"
+  }
+ },
+ {
+  "time": 1767283200000,
+  "hash": "0x0",
+  "delta": {
+   "type": "funding",
+   "coin": "BTC",
+   "usdc": "-0.40",
+   "szi": "0.05",
+   "fundingRate": "0.0000120"
+  }
+ }
+]

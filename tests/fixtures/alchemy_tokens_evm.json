@@ -1,0 +1,99 @@
+{
+ "data": {
+  "tokens": [
+   {
+    "address": "0x3333333333333333333333333333333333333333",
+    "network": "eth-mainnet",
+    "tokenAddress": null,
+    "tokenBalance": "0x0de0b6b3a7640000",
+    "tokenMetadata": {
+     "decimals": null,
+     "symbol": null
+    },
+    "tokenPrices": [
+     {
+      "currency": "usd",
+      "value": "3000.50",
+      "lastUpdatedAt": "2026-10-06T10:00:00Z"
+     }
+    ]
+   },
+   {
+    "address": "0x3333333333333333333333333333333333333333",
+    "network": "arb-mainnet",
+    "tokenAddress": null,
+    "tokenBalance": "0x06f05b59d3b20000",
+    "tokenMetadata": {
+     "decimals": 18,
+     "symbol": "ETH"
+    },
+    "tokenPrices": [
+     {
+      "currency": "usd",
+      "value": "3000.50"
+     }
+    ]
+   },
+   {
+    "address": "0x3333333333333333333333333333333333333333",
+    "network": "arb-mainnet",
+    "tokenAddress": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+    "tokenBalance": "0x000000000000000000000000000000000000000000000000000000001dcd6500",
+    "tokenMetadata": {
+     "decimals": 6,
+     "symbol": "USDC"
+    },
+    "tokenPrices": [
+     {
+      "currency": "usd",
+      "value": "0.9999"
+     }
+    ]
+   },
+   {
+    "address": "0x3333333333333333333333333333333333333333",
+    "network": "opt-mainnet",
+    "tokenAddress": "0xef4461891dfb3ac8572ccf7c794664a8dd927945",
+    "tokenBalance": "0x2b5e3af16b1880000",
+    "tokenMetadata": {
+     "decimals": 18,
+     "symbol": "WCT"
+    },
+    "tokenPrices": [
+     {
+      "currency": "usd",
+      "value": "0.30"
+     }
+    ]
+   },
+   {
+    "address": "0x3333333333333333333333333333333333333333",
+    "network": "base-mainnet",
+    "tokenAddress": "0xdead000000000000000000000000000000000001",
+    "tokenBalance": "0x3635c9adc5dea00000",
+    "tokenMetadata": {
+     "decimals": 18,
+     "symbol": "FREEAIRDROP.COM"
+    },
+    "tokenPrices": []
+   },
+   {
+    "address": "0x3333333333333333333333333333333333333333",
+    "network": "base-mainnet",
+    "tokenAddress": "0xdust000000000000000000000000000000000001",
+    "tokenBalance": "1000000",
+    "tokenMetadata": {
+     "decimals": 6,
+     "symbol": "DUST"
+    },
+    "tokenPrices": [
+     {
+      "currency": "usd",
+      "value": "0.5"
+     }
+    ]
+   }
+  ],
+  "pageKey": null
+ }
+}
