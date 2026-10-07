@@ -37,6 +37,7 @@ docker compose up -d
 
 Si Docker répond « permission denied … docker.sock », ajoutez votre utilisateur au groupe `docker` (une seule fois), puis relancez : `sudo usermod -aG docker $USER && newgrp docker`. Ou lancez simplement `sudo docker compose up -d`.
 
+L'interface est sur http://127.0.0.1:8090. Le port n'est publié que sur cette machine. Le conteneur tourne sans privilèges, avec un système de fichiers en lecture seule, et vos données sont dans `./data`.
 L'interface est sur http://127.0.0.1:8090. Le port n'est publié que sur cette machine. Le conteneur tourne sous un utilisateur ordinaire, sans aucune capacité système, avec un système de fichiers en lecture seule, et vos données sont dans `./data`.
 
 ### Avec Python 3.11 ou plus récent
