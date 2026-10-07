@@ -2,6 +2,13 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions selon [SemVer](https://semver.org/lang/fr/).
 
+## Non publié
+
+### Modifié
+- Supprimer un wallet retire aussi sa part des relevés passés et son historique importé ; bouton « Nettoyer l'historique » dans les Réglages pour les wallets déjà supprimés (copie de sauvegarde avant nettoyage).
+- Les positions ouvertes Hyperliquid passent de Wallets en haut de l'écran Trades.
+- Les cases de chiffres d'une même ligne ont toutes la même hauteur.
+
 ## 0.2.0 — J2 : interface web, Docker
 
 ### Ajouté

@@ -292,6 +292,59 @@ def save_snapshot(s: Session, summary: PortfolioSummary, n_errors: int, ts: int 
     return snap
 
 
+STAKE_SOURCE_NETWORK = {"HL_HYPE": "HL", "WCT_OP": "EVM"}
+
+
+def purge_orphans(s: Session) -> dict[str, int]:
+    """Retire ce qui appartient à des wallets qui ne sont plus suivis (wallet D-031) :
+
+    - leur part dans les relevés du patrimoine (``by_wallet_cat`` de chaque relevé : liquidités,
+      hold, staking soustraits du relevé) ;
+    - leur historique importé : fills et funding Hyperliquid, mouvements de staking.
+
+    Utile après une adresse ajoutée par erreur (un contrat, l'adresse de quelqu'un d'autre).
+    Un wallet en pause reste suivi : rien n'est retiré pour lui. Renvoie les nombres retirés."""
+    wallets = list(s.scalars(select(Wallet)))
+    ids = {str(w.id) for w in wallets}
+    tracked = {(w.address, w.network) for w in wallets}
+    out = {"snapshots": 0, "fills": 0, "funding": 0, "stake_events": 0}
+
+    for snap in s.scalars(select(Snapshot)):
+        det = dict(snap.detail or {})
+        cats = dict(det.get("by_wallet_cat") or {})
+        orphans = [wid for wid in cats if wid not in ids]
+        if not orphans:
+            continue
+        for wid in orphans:
+            c = cats.pop(wid) or {}
+            liquid, hold, stake = (D(c.get(k)) for k in ("liquid", "hold", "stake"))
+            snap.liquid -= liquid
+            snap.hold -= hold
+            snap.stake -= stake
+            snap.total -= liquid + hold + stake
+            (det.get("by_wallet") or {}).pop(wid, None)
+        det["by_wallet_cat"] = cats
+        det.pop("by_coin", None)  # non ventilé par wallet : retiré plutôt que laissé faux
+        det["purged_wallets"] = sorted(set(det.get("purged_wallets") or []) | set(orphans))
+        snap.detail = det
+        out["snapshots"] += 1
+
+    hl_tracked = {a for a, n in tracked if n == "HL"}
+    for model, key in ((HlFill, "fills"), (HlFunding, "funding")):
+        for addr in set(s.scalars(select(model.address).distinct())) - hl_tracked:
+            out[key] += s.query(model).filter(model.address == addr).delete()
+    for source, addr in {
+        (r[0], r[1]) for r in s.execute(select(StakeEventRow.source, StakeEventRow.address).distinct())
+    }:
+        if (addr, STAKE_SOURCE_NETWORK.get(source, "")) not in tracked:
+            out["stake_events"] += (
+                s.query(StakeEventRow)
+                .filter(StakeEventRow.source == source, StakeEventRow.address == addr)
+                .delete()
+            )
+    return out
+
+
 def snapshots(s: Session) -> list[Snapshot]:
     return list(s.scalars(select(Snapshot).order_by(Snapshot.ts_ms)))
 
