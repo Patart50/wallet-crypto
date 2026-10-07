@@ -91,12 +91,12 @@ Tables : `wallet` (avec `auto_trading`, `last_error`), `balance_line`, `hl_posit
 ## 8. Interface (NiceGUI, sombre par défaut, D-009, D-023)
 
 - **Tableau de bord** : total du patrimoine, évolution depuis le premier relevé, 7 j, 24 h, barre de composition par poste, patrimoine par poste (aire empilée), principaux actifs, gains cumulés par poste depuis un départ au choix ; actifs sans prix et doublons signalés.
-- **Wallets** : ajout d'adresses (plusieurs réseaux pour une même adresse 0x, ajout en masse), groupes, case « trading automatique » (D-011), détail des comptes HL et positions ouvertes, dernière sync et erreur.
+- **Wallets** : ajout d'adresses (plusieurs réseaux pour une même adresse 0x, ajout en masse), groupes, case « trading automatique » (D-011), détail des comptes HL (positions : lien vers Trades), dernière sync et erreur ; suppression = effacement de la part du wallet dans l'historique (D-031).
 - **Staking** : cartes automatiques (HYPE, WCT, vaults) puis positions manuelles, doublons signalés et exclus.
 - **Hold** : une carte par actif, alertes, saisie d'achats, ventes et frais, historique du PMP.
-- **Trades** : statistiques globales, une carte par actif, derniers trades visibles, le reste en tiroir, filtres comptes et période (D-028) ; trades saisis à la main.
+- **Trades** : positions ouvertes en tête (D-032), statistiques globales, une carte par actif, derniers trades visibles, le reste en tiroir, filtres comptes et période (D-028) ; trades saisis à la main.
 - **Graphiques** : un axe, légende, info-bulle avec tous les montants, tableau « Voir les données » sous chacun.
-- **Réglages** : clé Alchemy (masquée, guide pas à pas), devise et thème, fréquence de synchronisation, mot de passe (D-021), export et import de la base (D-025).
+- **Réglages** : clé Alchemy (masquée, guide pas à pas), devise et thème, fréquence de synchronisation, requêtes Alchemy de la dernière synchronisation (D-036), mot de passe (D-021, D-035), nettoyage de l'historique (D-031), export et import de la base (D-025).
 - **Accès** : écoute sur 127.0.0.1 ; ailleurs, mot de passe obligatoire ; connexion sur `/connexion`.
 - **À propos et limites**, auteur et soutien avec QR codes (D-012).
 
@@ -105,7 +105,7 @@ Tables : `wallet` (avec `auto_trading`, `last_error`), `balance_line`, `hl_posit
 - **J1** ✅ (PR #1) Squelette du paquet, moteur pur réécrit et testé (patrimoine, staking, hold, trades HL et manuels, gains), sources avec tests sur réponses fictives, base SQLite, synchronisation, CLI, CI (ruff, pytest, comparaison des adresses de don).
 - **J2** ✅ (PR #2) Interface complète, synchronisation automatique, prix courants et historiques, guide Alchemy dans l'interface, mot de passe, export/import, démonstration, Docker, tests de fumée de l'interface.
 - **Corrections d'usage** ✅ (PR #6, D-031, D-032) : nettoyage de l'historique des wallets supprimés, positions ouvertes dans Trades, cases de même hauteur.
-- **J3** v1.0 (D-034 à D-036) : migrations Alembic, revue de sécurité et correctifs (Host local sans mot de passe, sessions liées au mot de passe, freinage global, droits des fichiers), compteur de requêtes Alchemy. Restent pour Arnaud : vérification sur données réelles, mesure Alchemy, tag `v1.0.0`.
+- **J3** v1.0 (PR #7, D-034 à D-036) : migrations Alembic, revue de sécurité et correctifs (Host local sans mot de passe, sessions liées au mot de passe, freinage global, droits des fichiers), compteur de requêtes Alchemy. Restent pour Arnaud : vérification sur données réelles, mesure Alchemy, tag `v1.0.0`.
 - **Après v1.0** : connecteurs en lecture seule, Meria d'abord (D-033, D-037).
 
 ## 10. Hors périmètre v1.0
