@@ -30,8 +30,8 @@ wallet-crypto serve --demo                # démonstration, données fictives (D
 wallet-crypto sync | status | trades      # ligne de commande, cron
 ```
 
-- Configuration : variables d'environnement ou `.env` (`ALCHEMY_API_KEY`, `WALLET_CRYPTO_DATA`, `WALLET_CRYPTO_TZ`, `WALLET_CRYPTO_SYNC_HOURS`).
-- Écoute sur `127.0.0.1` par défaut. Exposition réseau seulement par option explicite, et alors mot de passe obligatoire (D-010).
+- Configuration : variables d'environnement ou `.env` (`ALCHEMY_API_KEY`, `WALLET_CRYPTO_PASSWORD`, `WALLET_CRYPTO_DATA`, `WALLET_CRYPTO_TZ`, `WALLET_CRYPTO_SYNC_HOURS`).
+- Écoute sur `127.0.0.1` par défaut. Exposition réseau seulement par option explicite, et alors mot de passe obligatoire (D-010, D-021).
 - Données dans un seul dossier (`./data` : base SQLite `wallet-crypto.db`, journaux `logs/`). Sauvegarde = copier ce dossier.
 
 ## 3. Sources de données (D-004, D-014)
@@ -80,11 +80,11 @@ Code pur dans `wallet_crypto/core/`, sans réseau ni base, testé. Montants en `
 
 Code : `db/models.py`, `db/store.py`. SQLite, WAL, clés étrangères actives. Montants en texte décimal (`DecimalText`), détails libres en JSON (`JsonText`).
 
-Tables : `wallet` (avec `auto_trading`, `last_error`), `balance_line`, `hl_position`, `hl_fill`, `hl_funding`, `stake_event`, `snapshot`, `hold_tx`, `manual_stake` (+ `_rate`, `_tx`), `manual_trade` (+ `_tx`), `price_cache`, `kv` (version du schéma, paires spot HL, taux EUR), `sync_run`. Migrations : D-018.
+Tables : `wallet` (avec `auto_trading`, `last_error`), `balance_line`, `hl_position`, `hl_fill`, `hl_funding`, `stake_event`, `snapshot`, `hold_tx`, `manual_stake` (+ `_rate`, `_tx`), `manual_trade` (+ `_tx`), `price_cache`, `kline_cache`, `kv` (version du schéma, paires spot HL, taux EUR, réglages), `sync_run`. Migrations : D-018.
 
-## 7. Ligne de commande (J1)
+## 7. Ligne de commande
 
-`wallet add RÉSEAUX ADRESSE [--label] [--group] [--no-staking] [--auto-trading]`, `wallet list`, `wallet remove ID`, `sync [--if-due]`, `status [--eur]`, `trades`, `about`, `serve` (J2). Console sobre (résumé) ; journal détaillé dans `data/logs/wallet-crypto.log`, `-v` pour l'afficher.
+`wallet add RÉSEAUX ADRESSE [--label] [--group] [--no-staking] [--auto-trading]`, `wallet list`, `wallet remove ID`, `sync [--if-due]`, `status [--eur]`, `trades`, `about`, `serve [--host] [--port] [--demo]`. Console sobre (résumé) ; journal détaillé dans `data/logs/wallet-crypto.log`, `-v` pour l'afficher.
 
 ## 8. Interface (NiceGUI, sombre par défaut, D-009, D-023)
 
@@ -92,17 +92,17 @@ Tables : `wallet` (avec `auto_trading`, `last_error`), `balance_line`, `hl_posit
 - **Wallets** : ajout d'adresses (plusieurs réseaux pour une même adresse 0x, ajout en masse), groupes, case « trading automatique » (D-011), détail des comptes HL et positions ouvertes, dernière sync et erreur.
 - **Staking** : cartes automatiques (HYPE, WCT, vaults) puis positions manuelles, doublons signalés et exclus.
 - **Hold** : une carte par actif, alertes, saisie d'achats, ventes et frais, historique du PMP.
-- **Trades** : statistiques globales, une carte par actif, derniers trades visibles, le reste en tiroir, filtres comptes et période ; trades saisis à la main.
+- **Trades** : statistiques globales, une carte par actif, derniers trades visibles, le reste en tiroir, filtres comptes et période (D-028) ; trades saisis à la main.
 - **Graphiques** : un axe, légende, info-bulle avec tous les montants, tableau « Voir les données » sous chacun.
 - **Réglages** : clé Alchemy (masquée, guide pas à pas), devise et thème, fréquence de synchronisation, mot de passe (D-021), export et import de la base (D-025).
 - **Accès** : écoute sur 127.0.0.1 ; ailleurs, mot de passe obligatoire ; connexion sur `/connexion`.
-- **À propos et limites**, auteur et soutien (D-012).
+- **À propos et limites**, auteur et soutien avec QR codes (D-012).
 
 ## 9. Jalons
 
-- **J1** ✅ Squelette du paquet, moteur pur réécrit et testé (patrimoine, staking, hold, trades HL et manuels, gains), sources avec tests sur réponses fictives, base SQLite, synchronisation, CLI, CI (ruff, pytest, comparaison des adresses de don).
+- **J1** ✅ (PR #1) Squelette du paquet, moteur pur réécrit et testé (patrimoine, staking, hold, trades HL et manuels, gains), sources avec tests sur réponses fictives, base SQLite, synchronisation, CLI, CI (ruff, pytest, comparaison des adresses de don).
 - **J2** ✅ (PR #2) Interface complète, synchronisation automatique, prix courants et historiques, guide Alchemy dans l'interface, mot de passe, export/import, démonstration, Docker, tests de fumée de l'interface.
-- **J3** v1.0 : migrations Alembic, README avec captures, À propos et limites, revue de sécurité (D-010), vérification sur données réelles.
+- **J3** v1.0 : migrations Alembic, revue de sécurité (D-010, D-021, D-026), vérification sur données réelles, mesure Alchemy, release.
 
 ## 10. Hors périmètre v1.0
 
