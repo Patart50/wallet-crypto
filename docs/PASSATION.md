@@ -16,7 +16,7 @@ Suivi de patrimoine crypto auto-hébergé en Python (NiceGUI, SQLite), pour util
 ## Où on en est
 
 - **J1 fusionné** (PR #1) : moteur en `Decimal`, sources, base, synchronisation, CLI.
-- **J2 en PR #2** (branche `j2-interface`) : interface NiceGUI complète, synchronisation automatique, prix courants (5 min) et historiques (cache journalier rempli pendant la sync), mot de passe, export/import, démonstration `serve --demo`, Docker, tests de fumée de l'interface. 110 tests. Vérifié dans Chromium : 7 pages en sombre, clair et mobile, aucune requête externe, aucune erreur console, QR codes décodés identiques aux adresses, navigation au clavier avec focus visible.
+- **J2 en PR #2** (branche `j2-interface`) : interface NiceGUI complète, synchronisation automatique, prix courants (5 min) et historiques (cache journalier rempli pendant la sync), mot de passe, export/import, démonstration `serve --demo`, Docker, tests de fumée de l'interface. 111 tests, CI verte (Python 3.11 et 3.13, image Docker). Vérifié dans Chromium : 7 pages en sombre, clair et mobile, aucune requête externe, aucune erreur console, QR codes décodés identiques aux adresses, navigation au clavier avec focus visible.
 - Reste à Arnaud : relire et fusionner ; **trancher D-013** (toujours `Decimal`, sans réponse) ; tester en réel avec ses adresses : `docker compose up -d` ou `wallet-crypto serve`, ajouter les wallets, coller la clé, Synchroniser, et remonter les écarts (aucun appel réel possible depuis l'environnement de Claude).
 
 ## Repères dans le code
@@ -38,7 +38,7 @@ Migrations Alembic (D-018), revue de sécurité (D-010, D-021, D-026), vérifica
 - D-013 : `Decimal` ou `float` (à confirmer par Arnaud).
 - D-004 : consommation Alchemy réelle d'une synchronisation, à mesurer.
 - Formats d'API non vérifiés en réel depuis l'environnement de Claude : `userAbstraction`, `candleSnapshot`, réseaux à activer dans l'app Alchemy.
-- Image Docker validée par la CI uniquement (pas de démon Docker dans l'environnement de Claude).
+- Image Docker validée par la CI uniquement (construite et lancée en non-root, racine en lecture seule) : pas de démon Docker dans l'environnement de Claude.
 
 ## Référence
 
