@@ -43,7 +43,7 @@ jobs:
         run: |
           mkdir -p data && sudo chown 10001 data
           docker run -d --name wc -p 127.0.0.1:8090:8090 -v "$PWD/data:/data" \
-            --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges wallet-crypto:ci
+            --read-only --tmpfs /tmp --cap-drop ALL wallet-crypto:ci
           for i in $(seq 40); do curl -fsS http://127.0.0.1:8090/a-propos > /dev/null && break; sleep 2; done
           curl -fsS http://127.0.0.1:8090/ | grep -q "Bienvenue"
           test "$(docker exec wc id -u)" = "10001"
