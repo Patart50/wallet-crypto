@@ -78,10 +78,13 @@ Toutes les 5 minutes tant que l'interface tourne (Binance, puis Hyperliquid) : s
 Export : copie cohérente par l'API de sauvegarde de SQLite, même pendant une synchronisation. Import : vérifie que le fichier est une base wallet-crypto d'une version prise en charge, garde la base actuelle dans `data/backups/`, puis la remplace.
 
 ## D-026 ✅ Docker
-Image `python:3.12-slim`, utilisateur non root, données dans le volume `/data`, vérification de santé. `docker-compose.yml` : port publié sur 127.0.0.1 seulement, racine en lecture seule, aucune capacité, `no-new-privileges`, utilisateur = propriétaire du dossier `./data` de l'hôte. Dans le conteneur, le serveur écoute sur 0.0.0.0 avec `--docker` (option cachée) : autorisé sans mot de passe parce que compose ne publie que sur la boucle locale ; avertissement dans le journal. La CI construit l'image et la lance dans ces conditions.
+Image `python:3.12-slim`, utilisateur non root, données dans le volume `/data`, vérification de santé. `docker-compose.yml` : port publié sur 127.0.0.1 seulement, racine en lecture seule, aucune capacité, utilisateur = propriétaire du dossier `./data` de l'hôte. Dans le conteneur, le serveur écoute sur 0.0.0.0 avec `--docker` (option cachée) : autorisé sans mot de passe parce que compose ne publie que sur la boucle locale ; avertissement dans le journal. La CI construit l'image et la lance dans ces conditions.
 
 ## D-027 ✅ Démonstration
 `wallet-crypto serve --demo` : base entièrement fictive (graine fixe) dans un dossier séparé `data-demo/`, 90 jours de relevés, trades, staking, saisies, prix historiques fictifs. Aucune API contactée, synchronisation désactivée. Sert aux captures du README et aux tests de l'interface.
 
 ## D-028 ✅ Trades : tous les comptes par défaut
 L'écran Trades affiche par défaut tous les comptes Hyperliquid ; un filtre par compte et par période permet d'isoler le trading automatique ou manuel (D-011).
+
+## D-029 ✅ Docker : pas de `no-new-privileges`
+Premier essai réel d'Arnaud (7 oct. 2026, Ubuntu) : le conteneur redémarrait en boucle sur « exec /usr/local/bin/wallet-crypto: operation not permitted ». Avec Docker installé en snap, AppArmor refuse l'exécution quand `no-new-privileges` est actif ; la CI (Docker installé par apt) ne le montrait pas. Option retirée du compose par Arnaud (PR #3) et de la CI. Restent : utilisateur non root, aucune capacité (`cap_drop: ALL`), racine en lecture seule, port publié sur 127.0.0.1. Précise D-026.
