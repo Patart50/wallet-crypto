@@ -201,7 +201,30 @@ def cmd_trades(config: Config, args) -> int:
 
 
 def cmd_serve(config: Config, args) -> int:
-    print("L'interface web arrive au jalon J2. En attendant : wallet-crypto status, wallet-crypto trades.")
+    import dataclasses
+
+    try:
+        from .ui.app import serve
+    except ImportError as exc:  # pragma: no cover - installation incomplète
+        print(f"Interface indisponible ({exc}). Réinstallez : pip install .", file=sys.stderr)
+        return 1
+    if args.demo:
+        config = dataclasses.replace(config, data_dir=config.data_dir.parent / "data-demo", alchemy_key="")
+        config.ensure_dirs()
+        db = Database(config.db_path)
+        db.init()
+        with db.session() as s:
+            empty = not store.list_wallets(s)
+        if empty:
+            from .demo import build_demo
+
+            build_demo(db)
+            print(f"Base de démonstration fictive créée dans {config.data_dir}")
+    password = config.password or None
+    if password and len(password) < 8:
+        print("WALLET_CRYPTO_PASSWORD : 8 caractères minimum.", file=sys.stderr)
+        return 1
+    serve(config, host=args.host, port=args.port, demo=args.demo, docker=args.docker, env_password=password)
     return 0
 
 
@@ -247,7 +270,16 @@ def build_parser() -> argparse.ArgumentParser:
     st.add_argument("--eur", action="store_true", help="afficher en euros")
     st.set_defaults(func=cmd_status)
     sub.add_parser("trades", help="statistiques des trades Hyperliquid").set_defaults(func=cmd_trades)
-    sub.add_parser("serve", help="interface web (J2)").set_defaults(func=cmd_serve)
+    sv = sub.add_parser("serve", help="lancer l'interface web")
+    sv.add_argument(
+        "--host", default="127.0.0.1", help="adresse d'écoute (défaut : 127.0.0.1, cette machine seulement)"
+    )
+    sv.add_argument("--port", type=int, default=8090)
+    sv.add_argument(
+        "--demo", action="store_true", help="données fictives, aucun appel réseau (dossier data-demo)"
+    )
+    sv.add_argument("--docker", action="store_true", help=argparse.SUPPRESS)
+    sv.set_defaults(func=cmd_serve)
     sub.add_parser("about", help="version, auteur, soutien, configuration").set_defaults(func=cmd_about)
     return p
 

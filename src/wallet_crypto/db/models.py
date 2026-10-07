@@ -294,3 +294,12 @@ class SyncRun(Base):
     n_ok: Mapped[int] = mapped_column(Integer, default=0)
     n_errors: Mapped[int] = mapped_column(Integer, default=0)
     message: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class KlineCache(Base):
+    """Clôture journalière Binance (bougie UTC), pour valoriser dans le temps (D-022)."""
+
+    __tablename__ = "kline_cache"
+    symbol: Mapped[str] = mapped_column(String(30), primary_key=True)
+    day_ms: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    close: Mapped[Decimal] = mapped_column(Dec)

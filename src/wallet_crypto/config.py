@@ -40,6 +40,7 @@ class Config:
     alchemy_key: str = ""
     tz_name: str = DEFAULT_TZ
     sync_hours: float = DEFAULT_SYNC_HOURS
+    password: str = ""  # mot de passe de l'interface (WALLET_CRYPTO_PASSWORD), en clair : jamais journalisé
 
     @property
     def tz(self) -> ZoneInfo:
@@ -63,7 +64,7 @@ class Config:
     @property
     def secrets(self) -> list[str]:
         """Valeurs à masquer dans les journaux et les messages d'erreur."""
-        return [s for s in (self.alchemy_key,) if s]
+        return [s for s in (self.alchemy_key, self.password) if s]
 
     def ensure_dirs(self) -> None:
         self.data_dir.mkdir(parents=True, exist_ok=True)
@@ -86,4 +87,5 @@ def load_config(env: dict[str, str] | None = None, cwd: Path | None = None) -> C
         alchemy_key=(merged.get("ALCHEMY_API_KEY") or "").strip(),
         tz_name=merged.get("WALLET_CRYPTO_TZ") or DEFAULT_TZ,
         sync_hours=max(hours, 0.25),
+        password=merged.get("WALLET_CRYPTO_PASSWORD") or "",
     )

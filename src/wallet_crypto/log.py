@@ -13,6 +13,7 @@ from .config import Config
 from .security import mask_secret
 
 LOGGER_NAME = "wallet_crypto"
+_FILTER: SecretFilter | None = None
 
 
 class SecretFilter(logging.Filter):
@@ -29,6 +30,12 @@ class SecretFilter(logging.Filter):
         return True
 
 
+def add_secret(value: str | None) -> None:
+    """Masque aussi une valeur connue après coup (clé saisie dans les Réglages)."""
+    if _FILTER is not None and value and len(value) >= 6 and value not in _FILTER.secrets:
+        _FILTER.secrets.append(value)
+
+
 def get_logger(name: str = "") -> logging.Logger:
     return logging.getLogger(f"{LOGGER_NAME}.{name}" if name else LOGGER_NAME)
 
@@ -40,7 +47,8 @@ def setup_logging(config: Config, verbose: bool = False) -> logging.Logger:
     root.setLevel(logging.DEBUG)
     for h in list(root.handlers):
         root.removeHandler(h)
-    flt = SecretFilter(config.secrets)
+    global _FILTER
+    flt = _FILTER = SecretFilter(config.secrets)
     fh = RotatingFileHandler(
         config.log_dir / "wallet-crypto.log", maxBytes=2_000_000, backupCount=5, encoding="utf-8"
     )

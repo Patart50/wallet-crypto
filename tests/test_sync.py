@@ -228,11 +228,12 @@ def test_cli_end_to_end(tmp_path, monkeypatch, capsys):
 
 def test_dotenv_and_config(tmp_path):
     (tmp_path / ".env").write_text(
-        '# commentaire\nALCHEMY_API_KEY="abc"\nexport WALLET_CRYPTO_SYNC_HOURS=2\nBAD\n'
+        '# commentaire\nALCHEMY_API_KEY="abc"\nexport WALLET_CRYPTO_SYNC_HOURS=2\nWALLET_CRYPTO_PASSWORD=secret-pass\nBAD\n'
     )
-    assert load_dotenv(tmp_path / ".env") == {"ALCHEMY_API_KEY": "abc", "WALLET_CRYPTO_SYNC_HOURS": "2"}
+    assert load_dotenv(tmp_path / ".env")["WALLET_CRYPTO_SYNC_HOURS"] == "2"
     c = load_config(env={}, cwd=tmp_path)
     assert c.alchemy_key == "abc" and c.sync_hours == 2 and c.data_dir == tmp_path / "data"
+    assert c.password == "secret-pass" and "secret-pass" in c.secrets
     c2 = load_config(env={"ALCHEMY_API_KEY": "env", "WALLET_CRYPTO_TZ": "Nowhere/X"}, cwd=tmp_path)
     assert c2.alchemy_key == "env" and str(c2.tz) == "UTC"
 
