@@ -18,8 +18,8 @@ jobs:
       # Tag de commun-crypto dont les adresses de don sont comparées à support.py (wallet D-012)
       COMMUN_CRYPTO_TAG: v1.2.0
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
       - name: Installer
@@ -36,7 +36,7 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Construire l'image
         run: docker build -t wallet-crypto:ci .
       - name: Lancer en racine en lecture seule, utilisateur non root
