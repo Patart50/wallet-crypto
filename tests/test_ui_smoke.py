@@ -112,3 +112,20 @@ def test_refuses_network_without_password(tmp_path):
     )
     assert r.returncode != 0
     assert "sans mot de passe" in r.stderr + r.stdout
+
+
+def test_foreign_host_refused_without_password(server):
+    # « DNS rebinding » : une page web fait pointer son nom vers 127.0.0.1 (D-035)
+    r = requests.get(server + "/", headers={"Host": "attaquant.example:8090"}, timeout=30)
+    assert r.status_code == 403 and "Patrimoine" not in r.text
+    port = server.rsplit(":", 1)[1]
+    assert requests.get(server + "/", headers={"Host": f"localhost:{port}"}, timeout=30).status_code == 200
+
+
+def test_foreign_host_allowed_with_password(tmp_path):
+    proc, base = start(tmp_path, env_extra={"WALLET_CRYPTO_PASSWORD": "motdepasse-test"})
+    try:
+        r = requests.get(base + "/", headers={"Host": "wallet.lan"}, timeout=30, allow_redirects=False)
+        assert r.status_code == 303  # vers la connexion
+    finally:
+        stop(proc)

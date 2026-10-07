@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import html
 from collections.abc import Callable
 from datetime import datetime
 from decimal import Decimal
@@ -85,7 +86,7 @@ def kpi(
 
 
 def chip(text: str, tooltip: str | None = None) -> None:
-    el = ui.html(f'<span class="wc-chip">{text}</span>')
+    el = ui.html(f'<span class="wc-chip">{html.escape(str(text))}</span>')  # texte saisi possible
     if tooltip:
         el.tooltip(tooltip)
 

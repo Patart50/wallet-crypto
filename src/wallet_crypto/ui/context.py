@@ -7,6 +7,7 @@ import time
 from dataclasses import dataclass, field
 from decimal import Decimal
 
+from .. import auth
 from ..config import Config
 from ..db import Database
 from ..prices import MarketPrices
@@ -50,6 +51,9 @@ class AppContext:
     base_config: Config
     demo: bool = False
     env_password_hash: str | None = None
+    env_password_token: str | None = None
+    secret: str = ""
+    exposed: bool = False  # écoute hors boucle locale (hors Docker) : mot de passe obligatoire
     prices: PriceBoard = field(default_factory=PriceBoard)
     syncing: bool = False
     last_sync_report: object | None = None
@@ -72,6 +76,13 @@ class AppContext:
 
     def password_hash(self) -> str | None:
         return self.env_password_hash or self.settings.password_hash
+
+    def auth_token(self) -> str | None:
+        """Jeton attendu dans la session ; ``None`` sans mot de passe (D-035)."""
+        if self.env_password_token:
+            return self.env_password_token
+        h = self.settings.password_hash
+        return auth.session_token(self.secret, h) if h else None
 
     def bump(self) -> None:
         self.version += 1

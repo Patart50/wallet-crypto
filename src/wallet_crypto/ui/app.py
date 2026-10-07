@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import asyncio
+import hmac
 import logging
 import time
 from pathlib import Path
@@ -57,10 +58,50 @@ RENDER = {
 
 
 # ====================================================================== accès
+THROTTLE = auth.LoginThrottle()
+
+
 def _logged_in() -> bool:
-    if not ctx().password_hash():
+    expected = ctx().auth_token()
+    if expected is None:
         return True
-    return bool(app.storage.user.get("auth"))
+    got = app.storage.user.get("auth")
+    return isinstance(got, str) and hmac.compare_digest(got, expected)
+
+
+class HostGuard:
+    """Sans mot de passe, n'accepte que les requêtes adressées à la machine locale (D-035).
+
+    Protège contre le « DNS rebinding » (une page web malveillante qui fait pointer son propre
+    nom vers 127.0.0.1 pour lire l'interface) et contre un port publié par erreur sur le réseau.
+    Couvre HTTP et WebSocket.
+    """
+
+    def __init__(self, inner):
+        self.inner = inner
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] in ("http", "websocket") and ctx().password_hash() is None:
+            host = dict(scope.get("headers") or []).get(b"host", b"").decode("latin-1")
+            if not auth.host_header_is_loopback(host):
+                if scope["type"] == "websocket":
+                    await send({"type": "websocket.close", "code": 1008})
+                    return
+                body = (
+                    b"wallet-crypto : acces refuse. Sans mot de passe, l'interface ne repond qu'a "
+                    b"http://127.0.0.1 ou http://localhost. Pour y acceder autrement, definissez "
+                    b"WALLET_CRYPTO_PASSWORD."
+                )
+                await send(
+                    {
+                        "type": "http.response.start",
+                        "status": 403,
+                        "headers": [(b"content-type", b"text/plain; charset=utf-8")],
+                    }
+                )
+                await send({"type": "http.response.body", "body": body})
+                return
+        await self.inner(scope, receive, send)
 
 
 # ====================================================================== synchronisation
@@ -272,10 +313,16 @@ def register_pages() -> None:
         ui.page_title("Connexion · wallet-crypto")
 
         async def submit() -> None:
+            wait = THROTTLE.wait_s(time.time())
+            if wait:
+                ui.notify(f"Trop d'essais : réessayez dans {int(wait) + 1} s.", type="warning")
+                return
             if auth.verify_password(pwd.value or "", c.password_hash()):
-                app.storage.user["auth"] = True
+                THROTTLE.succeeded()
+                app.storage.user["auth"] = c.auth_token()
                 ui.navigate.to(target)
             else:
+                THROTTLE.failed(time.time())
                 await asyncio.sleep(1.0)  # freine les essais en rafale
                 pwd.value = ""
                 ui.notify("Mot de passe incorrect.", type="negative")
@@ -308,7 +355,16 @@ def serve(
     db = Database(config.db_path)
     db.init()
     env_hash = auth.hash_password(env_password) if env_password else None
-    c = AppContext(db=db, base_config=config, demo=demo, env_password_hash=env_hash)
+    secret = auth.storage_secret(config.data_dir)
+    c = AppContext(
+        db=db,
+        base_config=config,
+        demo=demo,
+        env_password_hash=env_hash,
+        env_password_token=auth.session_token(secret, "env:" + env_password) if env_password else None,
+        secret=secret,
+        exposed=not auth.is_loopback(host) and not docker,
+    )
     context_mod.CTX = c
     has_password = bool(env_hash or load_settings(db, config).password_hash)
     if not auth.is_loopback(host) and not has_password and not docker:
@@ -319,6 +375,7 @@ def serve(
     if docker and not has_password:
         log.warning("Mode Docker sans mot de passe : le port doit rester publié sur 127.0.0.1 uniquement.")
 
+    app.add_middleware(HostGuard)
     app.add_static_files("/wc-static", STATIC)
     register_pages()
     app.on_startup(lambda: asyncio.create_task(background_loop()))
@@ -335,7 +392,7 @@ def serve(
         dark=None,
         reload=False,
         show=False,
-        storage_secret=auth.storage_secret(config.data_dir),
+        storage_secret=secret,
         uvicorn_logging_level="warning",
         reconnect_timeout=10,
     )

@@ -1,4 +1,4 @@
-# Spécification — wallet-crypto v0.3
+# Spécification — wallet-crypto v1.0
 
 Suivi de patrimoine crypto auto-hébergé, en Python, en français : soldes réels des wallets (Hyperliquid, EVM, Solana, Bitcoin), staking, hold avec prix moyen, trades Hyperliquid et trades saisis à la main. Public : utilisateurs avertis, à l'aise avec un terminal ou Docker. Projet frère de pmpa-crypto, dca-crypto, renfort-crypto et carnet-crypto. Toute convention est consignée dans [DECISIONS.md](DECISIONS.md).
 
@@ -32,6 +32,7 @@ wallet-crypto sync | status | trades      # ligne de commande, cron
 
 - Configuration : variables d'environnement ou `.env` (`ALCHEMY_API_KEY`, `WALLET_CRYPTO_PASSWORD`, `WALLET_CRYPTO_DATA`, `WALLET_CRYPTO_TZ`, `WALLET_CRYPTO_SYNC_HOURS`).
 - Écoute sur `127.0.0.1` par défaut. Exposition réseau seulement par option explicite, et alors mot de passe obligatoire (D-010, D-021).
+- Sans mot de passe, seules les requêtes adressées à `127.0.0.1`, `localhost` ou `[::1]` sont servies (DNS rebinding) ; sessions liées au mot de passe en vigueur ; blocage croissant après 5 échecs ; dossier de données en 700 (D-035).
 - Données dans un seul dossier (`./data` : base SQLite `wallet-crypto.db`, journaux `logs/`). Sauvegarde = copier ce dossier.
 
 ## 3. Sources de données (D-004, D-014)
@@ -62,6 +63,7 @@ Code : `sync.py`.
 - Fills, funding et mouvements de staking archivés localement, import incrémental et idempotent (Hyperliquid ne sert que les 10 000 derniers fills).
 - Un snapshot du patrimoine par synchronisation (base des courbes), avec ventilation par wallet et par catégorie.
 - Chaque exécution est enregistrée (`sync_run`) ; `--if-due` ne compte que les synchronisations ayant lu au moins un wallet.
+- Requêtes comptées par service et par méthode, reprises comprises, sans la clé ; dernière synchronisation gardée dans `kv: last_sync_calls`, affichée dans Réglages et par `sync` (D-036).
 
 ## 5. Calculs
 
@@ -80,7 +82,7 @@ Code pur dans `wallet_crypto/core/`, sans réseau ni base, testé. Montants en `
 
 Code : `db/models.py`, `db/store.py`. SQLite, WAL, clés étrangères actives. Montants en texte décimal (`DecimalText`), détails libres en JSON (`JsonText`).
 
-Tables : `wallet` (avec `auto_trading`, `last_error`), `balance_line`, `hl_position`, `hl_fill`, `hl_funding`, `stake_event`, `snapshot`, `hold_tx`, `manual_stake` (+ `_rate`, `_tx`), `manual_trade` (+ `_tx`), `price_cache`, `kline_cache`, `kv` (version du schéma, paires spot HL, taux EUR, réglages), `sync_run`. Migrations : D-018.
+Tables : `wallet` (avec `auto_trading`, `last_error`), `balance_line`, `hl_position`, `hl_fill`, `hl_funding`, `stake_event`, `snapshot`, `hold_tx`, `manual_stake` (+ `_rate`, `_tx`), `manual_trade` (+ `_tx`), `price_cache`, `kline_cache`, `kv` (version du schéma, paires spot HL, taux EUR, réglages), `sync_run`. Migrations Alembic (`db/migrations/`, `db/migrate.py`), jouées au démarrage, copie dans `data/backups/` avant migration, bases 0.x reprises au schéma `0001` (D-018, D-034). Dossier de données en 700, base en 600 (D-035).
 
 ## 7. Ligne de commande
 
@@ -89,12 +91,12 @@ Tables : `wallet` (avec `auto_trading`, `last_error`), `balance_line`, `hl_posit
 ## 8. Interface (NiceGUI, sombre par défaut, D-009, D-023)
 
 - **Tableau de bord** : total du patrimoine, évolution depuis le premier relevé, 7 j, 24 h, barre de composition par poste, patrimoine par poste (aire empilée), principaux actifs, gains cumulés par poste depuis un départ au choix ; actifs sans prix et doublons signalés.
-- **Wallets** : ajout d'adresses (plusieurs réseaux pour une même adresse 0x, ajout en masse), groupes, case « trading automatique » (D-011), détail des comptes HL et positions ouvertes, dernière sync et erreur.
+- **Wallets** : ajout d'adresses (plusieurs réseaux pour une même adresse 0x, ajout en masse), groupes, case « trading automatique » (D-011), détail des comptes HL (positions : lien vers Trades), dernière sync et erreur ; suppression = effacement de la part du wallet dans l'historique (D-031).
 - **Staking** : cartes automatiques (HYPE, WCT, vaults) puis positions manuelles, doublons signalés et exclus.
 - **Hold** : une carte par actif, alertes, saisie d'achats, ventes et frais, historique du PMP.
-- **Trades** : statistiques globales, une carte par actif, derniers trades visibles, le reste en tiroir, filtres comptes et période (D-028) ; trades saisis à la main.
+- **Trades** : positions ouvertes en tête (D-032), statistiques globales, une carte par actif, derniers trades visibles, le reste en tiroir, filtres comptes et période (D-028) ; trades saisis à la main.
 - **Graphiques** : un axe, légende, info-bulle avec tous les montants, tableau « Voir les données » sous chacun.
-- **Réglages** : clé Alchemy (masquée, guide pas à pas), devise et thème, fréquence de synchronisation, mot de passe (D-021), export et import de la base (D-025).
+- **Réglages** : clé Alchemy (masquée, guide pas à pas), devise et thème, fréquence de synchronisation, requêtes Alchemy de la dernière synchronisation (D-036), mot de passe (D-021, D-035), nettoyage de l'historique (D-031), export et import de la base (D-025).
 - **Accès** : écoute sur 127.0.0.1 ; ailleurs, mot de passe obligatoire ; connexion sur `/connexion`.
 - **À propos et limites**, auteur et soutien avec QR codes (D-012).
 
@@ -102,8 +104,9 @@ Tables : `wallet` (avec `auto_trading`, `last_error`), `balance_line`, `hl_posit
 
 - **J1** ✅ (PR #1) Squelette du paquet, moteur pur réécrit et testé (patrimoine, staking, hold, trades HL et manuels, gains), sources avec tests sur réponses fictives, base SQLite, synchronisation, CLI, CI (ruff, pytest, comparaison des adresses de don).
 - **J2** ✅ (PR #2) Interface complète, synchronisation automatique, prix courants et historiques, guide Alchemy dans l'interface, mot de passe, export/import, démonstration, Docker, tests de fumée de l'interface.
-- **Corrections d'usage** (D-031, D-032) : nettoyage de l'historique des wallets supprimés, positions ouvertes dans Trades, cases de même hauteur.
-- **J3** v1.0 : migrations Alembic, revue de sécurité (D-010, D-021, D-026), vérification sur données réelles, mesure Alchemy, release.
+- **Corrections d'usage** ✅ (PR #6, D-031, D-032) : nettoyage de l'historique des wallets supprimés, positions ouvertes dans Trades, cases de même hauteur.
+- **J3** v1.0 (PR #7, D-034 à D-036) : migrations Alembic, revue de sécurité et correctifs (Host local sans mot de passe, sessions liées au mot de passe, freinage global, droits des fichiers), compteur de requêtes Alchemy. Restent pour Arnaud : vérification sur données réelles, mesure Alchemy, tag `v1.0.0`.
+- **Après v1.0** : connecteurs en lecture seule, Meria d'abord (D-033, D-037).
 
 ## 10. Hors périmètre v1.0
 

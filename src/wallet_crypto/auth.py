@@ -58,3 +58,48 @@ def storage_secret(data_dir: Path) -> str:
     with os.fdopen(fd, "w") as f:
         f.write(value)
     return value
+
+
+def session_token(secret: str, material: str) -> str:
+    """Jeton de session lié au mot de passe en vigueur (wallet D-035).
+
+    Changer ou supprimer le mot de passe change le jeton : les sessions ouvertes avant sont
+    déconnectées. Pour la variable d'environnement, ``material`` est le mot de passe lui-même
+    (son hachage change à chaque démarrage, à cause du sel).
+    """
+    return hmac.new(secret.encode(), material.encode(), hashlib.sha256).hexdigest()
+
+
+def host_header_is_loopback(host: str) -> bool:
+    """``Host`` d'une requête (``127.0.0.1:8090``, ``localhost``, ``[::1]:8090``) local ?"""
+    host = (host or "").strip().lower()
+    if host.startswith("["):
+        name = host[1 : host.find("]")] if "]" in host else host[1:]
+    else:
+        name = host.rsplit(":", 1)[0] if host.count(":") == 1 else host
+    return name != "" and is_loopback(name)
+
+
+class LoginThrottle:
+    """Freinage des essais de mot de passe, global au serveur (toutes connexions confondues).
+
+    Après ``free`` échecs, chaque nouvel échec bloque la connexion pendant une durée qui double
+    (30 s, 60 s, … jusqu'à 15 min). Une connexion réussie remet le compteur à zéro.
+    """
+
+    def __init__(self, free: int = 5, base_s: float = 30, max_s: float = 900):
+        self.free, self.base_s, self.max_s = free, base_s, max_s
+        self.failures = 0
+        self.until = 0.0
+
+    def wait_s(self, now: float) -> float:
+        return max(0.0, self.until - now)
+
+    def failed(self, now: float) -> None:
+        self.failures += 1
+        if self.failures >= self.free:
+            self.until = now + min(self.base_s * 2 ** (self.failures - self.free), self.max_s)
+
+    def succeeded(self) -> None:
+        self.failures = 0
+        self.until = 0.0

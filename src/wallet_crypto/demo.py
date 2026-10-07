@@ -87,6 +87,20 @@ def build_demo(db: Database, now: int | None = None) -> None:
             },
         )
         store.kv_set(s, "demo", True)
+        store.kv_set(  # volumes fictifs, pour montrer l'affichage (D-036)
+            s,
+            "last_sync_calls",
+            {
+                "ts_ms": now - 40 * 60_000,
+                "calls": {
+                    "Alchemy · Portfolio assets/tokens/by-address": 2,
+                    "Alchemy · opt-mainnet · eth_call": 3,
+                    "Binance · ticker": 1,
+                    "Hyperliquid · clearinghouseState": 2,
+                    "Hyperliquid · userFillsByTime": 2,
+                },
+            },
+        )
 
         def px(b):
             return D(PRICES[b])

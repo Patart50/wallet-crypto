@@ -2,7 +2,19 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions selon [SemVer](https://semver.org/lang/fr/).
 
-## Non publié
+## 1.0.0 — J3 : migrations, sécurité, mesure Alchemy
+
+### Ajouté
+- Migrations automatiques de la base au démarrage (Alembic), avec copie de sauvegarde avant chaque migration. Les bases 0.x sont reprises telles quelles.
+- Nombre de requêtes Alchemy de la dernière synchronisation, par méthode, avec projection par jour et par mois (Réglages et `wallet-crypto sync`).
+
+### Sécurité
+- Sans mot de passe, l'interface ne répond qu'aux adresses locales (protection contre le « DNS rebinding » et contre un port publié par erreur).
+- Changer ou supprimer le mot de passe déconnecte les autres sessions.
+- Blocage temporaire et croissant après 5 mots de passe erronés.
+- Le mot de passe ne peut plus être supprimé depuis l'interface quand elle écoute sur le réseau.
+- Dossier de données en 700 et base en 600.
+- Texte saisi échappé dans les pastilles.
 
 ### Modifié
 - Supprimer un wallet retire aussi sa part des relevés passés et son historique importé ; bouton « Nettoyer l'historique » dans les Réglages pour les wallets déjà supprimés (copie de sauvegarde avant nettoyage).

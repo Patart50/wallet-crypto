@@ -104,6 +104,7 @@ def cmd_sync(config: Config, args) -> int:
     print(
         f"Historique : +{rep.new_fills} fills, +{rep.new_funding} funding, +{rep.new_events} mouvements de staking."
     )
+    print(f"Requêtes : {sum(rep.calls.values())} dont {rep.alchemy_calls} Alchemy.")
     for name, msg in rep.errors:
         print(f"  ✗ {name} : {msg}")
     for name, msg in rep.warnings:
