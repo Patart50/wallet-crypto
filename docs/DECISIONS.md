@@ -100,3 +100,22 @@ Demandes d'Arnaud (7 oct. 2026). Les positions Hyperliquid ouvertes quittent le 
 
 ## D-033 ⏳ Connecteurs vers d'autres plateformes
 Rappel d'Arnaud (7 oct. 2026), précise D-014 : prévoir le branchement d'autres plateformes par API. Reste hors v1.0. Principe retenu : clé API en lecture seule, sans droit de trade ni de retrait (refusée sinon si la plateforme permet de le vérifier), une classe de source par plateforme, soldes puis historique de trades, remplacement progressif des trades saisis à la main (D-016). Plateformes à fixer avec Arnaud selon celles qu'il utilise.
+
+## D-034 ✅ Migrations Alembic à partir de la v1.0
+Applique D-018. Migrations dans le paquet (`db/migrations/`), jouées automatiquement au démarrage par `Database.init` (`db/migrate.py`), sans fichier `alembic.ini` ni commande à lancer. Base vide : toutes les migrations. Base 0.x (sans table `alembic_version`) : tables manquantes créées comme avant, puis marquée au schéma initial `0001`, identique à celui des versions 0.x (vérifié sur une base de démonstration 0.2 : 360 relevés conservés). Base en retard : copie dans `data/backups/avant-migration-<de>-vers-<à>-*.db`, puis migration. Base plus récente que l'outil : refus de démarrer, et refus à l'import. Les scripts décrivent le stockage (`String(80)` pour les montants) sans dépendre des classes du modèle. Un test compare la base migrée au modèle ; un garde-fou rappelle, à la première nouvelle migration, de figer le schéma `0001` utilisé pour les bases 0.x. La clé `schema_version` reste pour lire les sauvegardes 0.x.
+
+## D-035 ✅ Revue de sécurité de la v1.0
+Revue de D-010, D-021 et D-026 (7 oct. 2026). Correctifs :
+- **DNS rebinding** : sans mot de passe, le serveur n'accepte que les requêtes adressées à `127.0.0.1`, `localhost` ou `[::1]` (en-tête `Host`, HTTP et WebSocket), réponse 403 sinon. Empêche une page web malveillante de lire l'interface en faisant pointer son nom vers 127.0.0.1, et bloque un port publié par erreur sur le réseau sans mot de passe.
+- **Sessions liées au mot de passe** : la session garde un jeton HMAC du mot de passe en vigueur (au lieu d'un simple « connecté ») ; changer ou supprimer le mot de passe déconnecte les autres sessions. La personne qui le change reste connectée.
+- **Freinage global** : en plus de la seconde d'attente, après 5 échecs la connexion est bloquée 30 s, puis 60 s… jusqu'à 15 min, toutes connexions confondues ; un succès remet à zéro.
+- **Mot de passe impossible à supprimer** depuis les Réglages quand le serveur écoute sur le réseau (hors `--docker`).
+- **Droits des fichiers** : dossier de données en 700, base en 600 (le secret des sessions l'était déjà).
+- **Injection HTML** : les pastilles (`chip`) échappent leur texte, qui peut venir d'une saisie (plateforme d'un trade).
+Vérifié sans changement : clé Alchemy masquée dans les erreurs et les journaux, redirection après connexion limitée aux pages connues, envoi de fichier réservé à une page déjà authentifiée et limité à 200 Mo, aucune ressource externe, conteneur non root sans capacités. Non traité, assumé : pas de HTTPS intégré (accès distant par VPN ou tunnel, README).
+
+## D-036 ✅ Mesure de la consommation Alchemy
+D-004 demandait de vérifier le quota gratuit sur une synchronisation réelle, impossible depuis l'environnement de Claude. Le client HTTP compte désormais chaque requête envoyée (reprises comprises) par service et par méthode, sans jamais la clé (« Alchemy · Portfolio assets/tokens/by-address », « Alchemy · opt-mainnet · eth_call »). La dernière synchronisation est enregistrée (`kv: last_sync_calls`), affichée dans Réglages → Clé Alchemy avec la projection par jour et par mois selon la fréquence, et dans `wallet-crypto sync`. Le coût en unités de calcul dépend de la méthode : l'outil renvoie au tableau de bord Alchemy (Usage) plutôt que d'afficher un barème qui peut changer. D-004 reste ⚠️ jusqu'au retour d'Arnaud.
+
+## D-037 ⏳ Premier connecteur : Meria
+Précise D-033. Arnaud utilise Hyperliquid (déjà couvert) et Meria (7 oct. 2026). Meria génère une clé API en lecture seule (Mon compte → API), utilisée par des outils fiscaux comme Waltio pour importer transactions, dépôts, retraits et frais. Documentation publique de l'API non trouvée : format, authentification et présence des soldes et du staking à vérifier avant tout code, avec Arnaud ou auprès de Meria. Après la v1.0.

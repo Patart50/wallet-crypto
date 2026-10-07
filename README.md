@@ -12,7 +12,7 @@
 - 🔑 **Votre propre clé API.** Seule une clé Alchemy gratuite est nécessaire (pour EVM et Solana). Chacun utilise la sienne : guide pas à pas ci-dessous, et dans l'application.
 - 🇫🇷 En français, pour utilisateurs avertis à l'aise avec un terminal ou Docker.
 
-> **Version 0.2 (jalon J2).** Interface web complète, Docker, démonstration. La v1.0 (J3) ajoutera les migrations de base et une revue de sécurité ; en attendant, exportez votre base avant chaque mise à jour.
+> **Version 1.0.** Les mises à jour migrent votre base automatiquement, après en avoir gardé une copie dans `data/backups/`.
 
 ## Essayer sans rien configurer
 
@@ -95,6 +95,8 @@ Par défaut, l'interface n'écoute que sur la machine locale (`127.0.0.1`), car 
 WALLET_CRYPTO_PASSWORD='une phrase longue' wallet-crypto serve --host 0.0.0.0
 ```
 
+Sans mot de passe, l'interface ne répond qu'aux adresses `127.0.0.1` et `localhost` : même un port publié par erreur sur le réseau reste fermé. Après 5 essais erronés, la connexion est bloquée quelques minutes. Changer le mot de passe déconnecte les autres appareils.
+
 Le mot de passe peut aussi se définir dans **Réglages → Accès**. Avec Docker, ajoutez `WALLET_CRYPTO_PASSWORD` dans `.env` avant de modifier la ligne `ports` de `docker-compose.yml`. Hors de votre réseau local, passez par un VPN ou un tunnel chiffré plutôt que d'exposer le port sur Internet.
 
 ## Ligne de commande
@@ -114,7 +116,9 @@ Sans l'interface, une tâche cron fait la synchronisation : `*/30 * * * * cd /ch
 
 ## Vos données
 
-- Tout est dans `data/` : la base `wallet-crypto.db` (SQLite) et les journaux `logs/`. **Sauvegarder = copier ce dossier**, ou utiliser **Réglages → Exporter la base**.
+- Tout est dans `data/` : la base `wallet-crypto.db` (SQLite) et les journaux `logs/`. **Sauvegarder = copier ce dossier**, ou utiliser **Réglages → Exporter la base**. Le dossier n'est lisible que par vous.
+- **Mise à jour** : `git pull` puis `docker compose up -d --build` (ou `pip install -U .`). Au démarrage, la base est migrée si besoin, après une copie dans `data/backups/`.
+- **Consommation Alchemy** : Réglages → Clé Alchemy indique le nombre de requêtes de la dernière synchronisation et la projection par mois ; le décompte exact en unités de calcul est dans le tableau de bord Alchemy (Usage).
 - Les adresses que vous suivez sont envoyées aux services qui fournissent leurs soldes : Hyperliquid, Alchemy, mempool.space. C'est inhérent à l'outil. Les prix viennent des API publiques de Binance et de Hyperliquid, qui ne reçoivent que des noms de paires.
 - Rien d'autre ne quitte votre machine. L'interface ne charge aucune ressource externe : polices, scripts et icônes sont servis par l'application.
 
@@ -144,7 +148,8 @@ Le détail des conventions est consigné dans [docs/DECISIONS.md](docs/DECISIONS
 - Hyperliquid ne fournit que les 10 000 derniers fills : un trade ouvert avant est marqué « incomplet ».
 - Les tokens sans prix chez Alchemy sont ignorés (presque toujours du spam d'airdrop), comme la poussière de moins de 1 $.
 - Prix historiques à la journée (clôture UTC) ; un actif sans historique est exclu du graphique des gains, et signalé.
-- Pas de plateforme centralisée (Binance, Coinbase…) pour l'instant : l'architecture est prête à les accueillir.
+- Pas de plateforme centralisée (Meria, Binance…) pour l'instant : l'architecture est prête à les accueillir, en lecture seule.
+- Pas de HTTPS intégré : pour un accès hors de chez vous, passez par un VPN ou un tunnel chiffré.
 
 ## Développement
 

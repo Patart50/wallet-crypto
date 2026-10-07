@@ -1,4 +1,4 @@
-# Passation — wallet-crypto (7 octobre 2026, 17 h)
+# Passation — wallet-crypto (7 octobre 2026, 18 h)
 
 À lire après `claude/PROGRAMME.md`. Compléter avec `claude/wallet-crypto/SPEC.md` et `DECISIONS.md` (aussi dans `docs/` du dépôt).
 
@@ -17,8 +17,9 @@ Suivi de patrimoine crypto auto-hébergé en Python (NiceGUI, SQLite), pour util
 
 - **J1 fusionné** (PR #1) : moteur en `Decimal`, sources, base, synchronisation, CLI.
 - **J2 fusionné** (PR #2, #4, #5) : interface NiceGUI complète, synchronisation automatique, prix courants (5 min) et historiques (cache journalier rempli pendant la sync), mot de passe, export/import, démonstration `serve --demo`, Docker, tests de fumée de l'interface. 111 tests, CI verte (Python 3.11 et 3.13, image Docker). Vérifié dans Chromium : 7 pages en sombre, clair et mobile, aucune requête externe, aucune erreur console, QR codes décodés identiques aux adresses, navigation au clavier avec focus visible.
-- **Corrections d'usage en PR** (branche `corrections-usage`), après le premier essai réel d'Arnaud sous Docker : nettoyage de l'historique des wallets supprimés (D-031, cas de l'adresse du contrat WCT saisie par erreur), positions ouvertes en haut de Trades et cases de même hauteur (D-032). 113 tests. Arnaud doit, après fusion : `git pull && sudo docker compose up -d --build`, puis Réglages → « Nettoyer l'historique ».
-- Connecteurs d'autres plateformes : D-033, après la v1.0 ; plateformes à demander à Arnaud.
+- **Corrections d'usage fusionnées** (PR #6), après le premier essai réel d'Arnaud sous Docker : nettoyage de l'historique des wallets supprimés (D-031, cas de l'adresse du contrat WCT saisie par erreur), positions ouvertes en haut de Trades et cases de même hauteur (D-032). 113 tests. Arnaud doit, après fusion : `git pull && sudo docker compose up -d --build`, puis Réglages → « Nettoyer l'historique ».
+- **J3 / v1.0.0 en PR** (branche `j3-v1`) : migrations Alembic automatiques (D-034), revue de sécurité et correctifs (D-035), compteur de requêtes Alchemy (D-036). Version 1.0.0 dans `pyproject.toml`. Après fusion, Arnaud : mise à jour Docker, une synchronisation, relever le nombre de requêtes Alchemy (Réglages) et la consommation dans le tableau de bord Alchemy (pour clore D-004), puis tag et release `v1.0.0`.
+- Connecteurs : D-033 ; Arnaud utilise Hyperliquid et Meria, donc Meria d'abord (D-037), API à documenter avant tout code.
 - D-013 validée par Arnaud (7 oct. 2026) : `Decimal` partout.
 - Arnaud fait tourner l'outil en réel sous Docker depuis le 7 oct. 2026 (« tout est bon », calculs justes). Reste à lui : fusionner la PR des corrections, nettoyer son historique, remonter les écarts suivants (aucun appel réel possible depuis l'environnement de Claude).
 
@@ -32,13 +33,13 @@ Suivi de patrimoine crypto auto-hébergé en Python (NiceGUI, SQLite), pour util
 - Vérification visuelle : lancer `wallet-crypto serve --demo --port 8091`, captures Playwright avec `executable_path="/opt/pw-browsers/chromium-1194/chrome-linux/chrome"`. Pour arrêter le serveur, ne pas utiliser `pkill -f` avec un motif présent dans la commande courante (le shell se tue lui-même).
 - Pièges NiceGUI : `.hidden` de Quasar est en `!important` (utiliser `wc-hide-xs`) ; l'anneau de focus des boutons passe par `box-shadow` ; un sous-processus de test doit retirer `PYTEST_CURRENT_TEST` de son environnement.
 
-## J3 (prochain jalon, v1.0)
+## Après la v1.0
 
-Migrations Alembic (D-018), revue de sécurité (D-010, D-021, D-026), vérification sur données réelles d'Arnaud, mesure de la consommation Alchemy (D-004), captures définitives, release.
+Connecteur Meria (D-037) une fois son API documentée ; export du hold au format CSV de pmpa (piste programme). Toute nouvelle migration : `alembic revision --autogenerate` avec un `alembic.ini` temporaire hors du dépôt, scripts sans dépendance aux classes du modèle, puis figer le schéma 0001 dans `migrate._baseline_tables` (le test `test_baseline_guard` le rappelle).
 
 ## Points ouverts
 
-- D-004 : consommation Alchemy réelle d'une synchronisation, à mesurer.
+- D-004 : consommation Alchemy réelle, à relever par Arnaud (compteur D-036).
 - Formats d'API non vérifiés en réel depuis l'environnement de Claude : `userAbstraction`, `candleSnapshot`, réseaux à activer dans l'app Alchemy.
 - Image Docker validée par la CI uniquement (construite et lancée en non-root, racine en lecture seule) : pas de démon Docker dans l'environnement de Claude.
 

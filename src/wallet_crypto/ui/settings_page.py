@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import inspect
 
-from nicegui import ui
+from nicegui import app, ui
 
 from .. import auth, backup, services
 from ..log import add_secret
 from ..security import mask_secret
 from ..settings import save_setting
+from ..sources.http import is_alchemy
 from .components import alert, confirm, page_title, when
 from .context import ctx
 
@@ -84,6 +85,7 @@ def render(go_to, apply_theme) -> None:
                 ui.button("Enregistrer", on_click=save_key).props("unelevated color=primary no-caps")
                 if st.alchemy_key:
                     ui.button("Retirer la clé", on_click=remove_key).props("flat no-caps color=negative")
+        _alchemy_usage(c)
         with ui.expansion("Comment obtenir ma clé ?", value=not st.alchemy_key).classes("w-full"):
             with ui.column().classes("gap-2"):
                 for i, (t, txt) in enumerate(ALCHEMY_STEPS, 1):
@@ -172,12 +174,13 @@ def render(go_to, apply_theme) -> None:
                 except ValueError as exc:
                     ui.notify(str(exc), type="negative")
                     return
-                ui.notify("Mot de passe enregistré.", type="positive")
+                app.storage.user["auth"] = c.auth_token()  # rester connecté sur cet appareil
+                ui.notify("Mot de passe enregistré. Les autres sessions sont déconnectées.", type="positive")
                 refresh()
 
             with ui.row().classes("gap-2"):
                 ui.button("Enregistrer", on_click=set_pwd).props("unelevated color=primary no-caps")
-                if st.password_hash:
+                if st.password_hash and not c.exposed:
                     ui.button(
                         "Supprimer le mot de passe",
                         on_click=lambda: (save_setting(c.db, "password_hash", None), refresh()),
@@ -273,3 +276,34 @@ def render(go_to, apply_theme) -> None:
         ).props('accept=".db" flat').classes("wc-upload")
     if c.demo:
         alert("Mode démonstration : données fictives, aucune API n'est contactée.", "info")
+
+
+def _alchemy_usage(c) -> None:
+    """Requêtes Alchemy de la dernière synchronisation (D-036)."""
+    usage = services.last_sync_calls(c.db)
+    if not usage:
+        return
+    alchemy = {k.removeprefix("Alchemy · "): n for k, n in usage["calls"].items() if is_alchemy(k)}
+    total = sum(alchemy.values())
+    with ui.expansion(
+        f"Dernière synchronisation ({when(usage['ts_ms'])}) : {total} requête(s) Alchemy"
+    ).classes("w-full"):
+        if alchemy:
+            with ui.element("table").classes("wc-table text-sm max-w-[520px]"):
+                for k, n in alchemy.items():
+                    with ui.element("tr"):
+                        with ui.element("td"):
+                            ui.label(k)
+                        with ui.element("td").classes("r"):
+                            ui.label(str(n))
+        ui.label(
+            "Alchemy décompte en « unités de calcul », dont le coût varie selon la méthode : la "
+            "consommation exacte et ce qu'il reste du forfait gratuit sont dans le tableau de bord "
+            "Alchemy, onglet Usage."
+        ).classes("wc-muted text-sm")
+        h = c.settings.sync_hours or 6
+        per_day = total * 24 / h
+        ui.label(
+            f"Avec une synchronisation toutes les {h} h : environ {per_day:.0f} requêtes par jour, "
+            f"{per_day * 30:.0f} par mois (plus les synchronisations manuelles)."
+        ).classes("wc-muted text-sm")

@@ -14,7 +14,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from .db import Database
+from .db import Database, migrate
 from .db.models import SCHEMA_VERSION
 
 
@@ -37,25 +37,35 @@ def export_bytes(db: Database) -> bytes:
         return out.read_bytes()
 
 
-def validate(path: Path) -> int:
-    """Renvoie la version de schéma, ou lève ``BackupError``."""
+def validate(path: Path) -> str:
+    """Renvoie la révision du schéma (« 0.x » pour une base d'avant les migrations), ou lève ``BackupError``."""
     try:
         con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
         try:
-            row = con.execute("SELECT value FROM kv WHERE key = 'schema_version'").fetchone()
             con.execute("SELECT count(*) FROM wallet").fetchone()
+            tables = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+            rev = None
+            if "alembic_version" in tables:
+                row = con.execute("SELECT version_num FROM alembic_version").fetchone()
+                rev = row[0] if row else None
+            legacy = con.execute("SELECT value FROM kv WHERE key = 'schema_version'").fetchone()
         finally:
             con.close()
     except sqlite3.DatabaseError as exc:
         raise BackupError("Ce fichier n'est pas une sauvegarde wallet-crypto.") from exc
-    if not row:
+    if rev is not None:
+        if not migrate.known(rev):
+            raise BackupError(
+                "Sauvegarde créée par une version plus récente de wallet-crypto : mettez l'outil à jour."
+            )
+        return rev
+    if not legacy:
         raise BackupError("Version de la sauvegarde introuvable.")
-    version = int(str(row[0]).strip('"'))
-    if version > SCHEMA_VERSION:
+    if int(str(legacy[0]).strip('"')) > SCHEMA_VERSION:
         raise BackupError(
             "Sauvegarde créée par une version plus récente de wallet-crypto : mettez l'outil à jour."
         )
-    return version
+    return "0.x"
 
 
 def import_bytes(db: Database, data: bytes) -> Path:

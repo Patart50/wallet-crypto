@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wallet-crypto"
-version = "0.2.0"
+version = "1.0.0"
 description = "Suivi de patrimoine crypto auto-hébergé : wallets, staking, hold et trades Hyperliquid. Lecture seule, en français."
 readme = "README.md"
 license = "AGPL-3.0-or-later"
@@ -13,6 +13,7 @@ authors = [{ name = "Arnaud (Patart50)" }]
 requires-python = ">=3.11"
 dependencies = [
     "sqlalchemy>=2.0",
+    "alembic>=1.13",
     "requests>=2.31",
     "nicegui>=2.20,<4",
     "segno>=1.6",
@@ -38,6 +39,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "wallet_crypto.ui" = ["static/*.svg", "static/fonts/*"]
+"wallet_crypto.db" = ["migrations/*.py", "migrations/*.mako", "migrations/versions/*.py"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

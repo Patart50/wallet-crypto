@@ -22,7 +22,7 @@ from .db.models import SyncRun, Wallet
 from .lock import FileLock, LockBusy
 from .prices import MarketPrices
 from .sources import get_source
-from .sources.http import Http
+from .sources.http import Http, is_alchemy
 
 log = logging.getLogger("wallet_crypto.sync")
 
@@ -40,6 +40,11 @@ class SyncReport:
     total: Decimal | None = None
     unpriced: list[str] = field(default_factory=list)
     duration_s: float = 0.0
+    calls: dict[str, int] = field(default_factory=dict)  # requêtes par service (D-036)
+
+    @property
+    def alchemy_calls(self) -> int:
+        return sum(n for k, n in self.calls.items() if is_alchemy(k))
 
 
 def is_due(db: Database, config: Config, now: int) -> bool:
@@ -154,6 +159,7 @@ def run_sync(
                 r.finished_ms, r.status, r.message = store.now_ms(), "empty", "aucun wallet"
             return SyncReport("empty")
         report = SyncReport("ok")
+        calls_before = dict(getattr(http, "calls", {}) or {})
         market = MarketPrices.load(http)
         if market.hl_pairs:
             with db.session() as s:
@@ -176,17 +182,24 @@ def run_sync(
                 log.exception("Prix historiques : %s", exc)
                 report.warnings.append(("prix historiques", str(exc)))
         report.duration_s = round(_time.monotonic() - t0, 1)
+        report.calls = {
+            k: n - calls_before.get(k, 0)
+            for k, n in sorted((getattr(http, "calls", {}) or {}).items())
+            if n - calls_before.get(k, 0) > 0
+        }
         with db.session() as s:
+            store.kv_set(s, "last_sync_calls", {"ts_ms": now, "calls": report.calls})
             r = s.get(SyncRun, run_id)
             r.finished_ms = store.now_ms()
             r.status = "ok" if report.n_ok else "error"
             r.n_ok, r.n_errors = report.n_ok, report.n_errors
             r.message = "; ".join(f"{n} : {m}" for n, m in report.errors)[:2000] or None
         log.info(
-            "Synchronisation terminée : %d OK, %d erreur(s) en %.1f s",
+            "Synchronisation terminée : %d OK, %d erreur(s) en %.1f s, %d requête(s) Alchemy",
             report.n_ok,
             report.n_errors,
             report.duration_s,
+            report.alchemy_calls,
         )
         return report
     finally:

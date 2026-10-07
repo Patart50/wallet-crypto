@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 import time
+from collections import Counter
 from decimal import Decimal
 from typing import Any
 from urllib.parse import urlsplit
@@ -17,6 +18,30 @@ from ..security import mask_secret
 
 RETRY_STATUS = {429, 500, 502, 503, 504}
 log = logging.getLogger("wallet_crypto.http")
+
+
+def call_label(method: str, url: str, payload: Any = None) -> str:
+    """Nom lisible d'un appel, pour compter la consommation par service (wallet D-036).
+
+    Ne contient jamais la clé : seulement le service et la méthode appelée.
+    """
+    parts = urlsplit(url)
+    host = parts.hostname or ""
+    rpc = payload.get("method") if isinstance(payload, dict) else None
+    if host == "api.g.alchemy.com":
+        return "Alchemy · Portfolio " + parts.path.split("/", 4)[-1]
+    if host.endswith(".g.alchemy.com"):
+        return f"Alchemy · {host.split('.')[0]} · {rpc or '?'}"
+    if "hyperliquid" in host:
+        kind = payload.get("type") if isinstance(payload, dict) else None
+        return f"Hyperliquid · {kind or parts.path}"
+    if "binance" in host:
+        return "Binance · " + parts.path.rsplit("/", 1)[-1]
+    return f"{host} · {parts.path}"
+
+
+def is_alchemy(label: str) -> bool:
+    return label.startswith("Alchemy")
 
 
 class HttpError(RuntimeError):
@@ -32,6 +57,7 @@ class Http:
         self.secrets = [s for s in (secrets or []) if s]
         self.retries = retries
         self.backoff = backoff
+        self.calls: Counter[str] = Counter()  # requêtes envoyées, reprises comprises
 
     def _mask(self, text: str) -> str:
         for s in self.secrets:
@@ -40,7 +66,9 @@ class Http:
 
     def _request(self, method: str, url: str, timeout: float, **kw) -> Any:
         last: Exception | None = None
+        label = call_label(method, url, kw.get("json"))
         for attempt in range(self.retries + 1):
+            self.calls[label] += 1
             try:
                 r = self.session.request(method, url, timeout=timeout, **kw)
                 if r.status_code in RETRY_STATUS and attempt < self.retries:

@@ -10,7 +10,8 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from .models import KV, SCHEMA_VERSION, Base
+from . import migrate
+from .models import KV, SCHEMA_VERSION
 
 
 class Database:
@@ -23,12 +24,18 @@ class Database:
         event.listen(self.engine, "connect", _sqlite_pragmas)
         self._sessions = sessionmaker(self.engine, expire_on_commit=False, future=True)
 
-    def init(self) -> None:
-        """Crée les tables manquantes (sans toucher aux existantes) et note la version."""
-        Base.metadata.create_all(self.engine)
+    def init(self) -> str | None:
+        """Crée ou migre le schéma (Alembic, D-034), protège le fichier, note la version.
+
+        Renvoie le chemin de la copie faite avant une migration, le cas échéant.
+        """
+        saved = migrate.upgrade(self.engine, self.path)
+        if self.path is not None:
+            _private(self.path)
         with self.session() as s:
             if s.get(KV, "schema_version") is None:
                 s.add(KV(key="schema_version", value=SCHEMA_VERSION))
+        return saved
 
     @contextmanager
     def session(self) -> Iterator[Session]:
@@ -41,6 +48,17 @@ class Database:
             raise
         finally:
             s.close()
+
+
+def _private(path: Path) -> None:
+    """Dossier de données en 700, base en 600 : le patrimoine n'est lisible que par son propriétaire."""
+    try:
+        path.parent.chmod(0o700)
+        for p in (path, Path(str(path) + "-wal"), Path(str(path) + "-shm")):
+            if p.exists():
+                p.chmod(0o600)
+    except OSError:  # système de fichiers sans droits Unix (partage Windows…) : sans effet
+        pass
 
 
 def _sqlite_pragmas(dbapi_conn, _record) -> None:

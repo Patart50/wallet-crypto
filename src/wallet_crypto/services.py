@@ -864,3 +864,10 @@ def hist_bases(db: Database) -> set[str]:
         bases = set(hi.txs) | {r for r in s.scalars(select(StakeEventRow.asset).distinct())}
         bases |= {p.crypto.upper() for p in s.scalars(select(ManualStakeRow))}
     return bases
+
+
+def last_sync_calls(db: Database) -> dict | None:
+    """``{"ts_ms", "calls": {service: n}}`` de la dernière synchronisation, ou ``None`` (D-036)."""
+    with db.session() as s:
+        v = store.kv_get(s, "last_sync_calls")
+    return v if isinstance(v, dict) and v.get("calls") is not None else None
