@@ -20,7 +20,7 @@ Suivi de patrimoine crypto auto-hébergé en Python (NiceGUI, SQLite), pour util
 - **Corrections d'usage en PR** (branche `corrections-usage`), après le premier essai réel d'Arnaud sous Docker : nettoyage de l'historique des wallets supprimés (D-031, cas de l'adresse du contrat WCT saisie par erreur), positions ouvertes en haut de Trades et cases de même hauteur (D-032). 113 tests. Arnaud doit, après fusion : `git pull && sudo docker compose up -d --build`, puis Réglages → « Nettoyer l'historique ».
 - Connecteurs d'autres plateformes : D-033, après la v1.0 ; plateformes à demander à Arnaud.
 - D-013 validée par Arnaud (7 oct. 2026) : `Decimal` partout.
-- Reste à Arnaud : relire et fusionner ; tester en réel avec ses adresses : `docker compose up -d` ou `wallet-crypto serve`, ajouter les wallets, coller la clé, Synchroniser, et remonter les écarts (aucun appel réel possible depuis l'environnement de Claude).
+- Arnaud fait tourner l'outil en réel sous Docker depuis le 7 oct. 2026 (« tout est bon », calculs justes). Reste à lui : fusionner la PR des corrections, nettoyer son historique, remonter les écarts suivants (aucun appel réel possible depuis l'environnement de Claude).
 
 ## Repères dans le code
 
