@@ -226,3 +226,66 @@ def test_storage_secret_is_stable(tmp_path):
     a = auth.storage_secret(tmp_path)
     assert a == auth.storage_secret(tmp_path) and len(a) > 30
     assert oct((tmp_path / "secret.key").stat().st_mode)[-3:] == "600"
+
+
+# ---------------------------------------------------------------- nettoyage de l'historique (D-031)
+def test_delete_wallet_purges_its_history(demo):
+    from wallet_crypto.db.models import HlFill, Snapshot, Wallet
+
+    config, db = demo
+    with db.session() as s:
+        evm = s.query(Wallet).filter_by(network="EVM").one()
+        evm_id, hl_count = str(evm.id), s.query(HlFill).count()
+        before = {sn.id: (sn.total, sn.detail["by_wallet_cat"][evm_id]) for sn in s.query(Snapshot)}
+    n = services.delete_wallet(db, int(evm_id))
+    assert n["snapshots"] == len(before) and n["stake_events"] > 0 and n["fills"] == 0
+    with db.session() as s:
+        assert s.query(HlFill).count() == hl_count  # l'historique Hyperliquid n'est pas touché
+        assert s.query(StakeEventRow).filter_by(source="WCT_OP").count() == 0
+        assert s.query(StakeEventRow).filter_by(source="HL_HYPE").count() > 0
+        for sn in s.query(Snapshot):
+            total0, cats = before[sn.id]
+            assert sn.total == total0 - sum(cats.values(), Decimal(0))
+            assert evm_id not in sn.detail["by_wallet_cat"] and "by_coin" not in sn.detail
+            assert (
+                sn.total
+                == sum((sum(c.values(), Decimal(0)) for c in sn.detail["by_wallet_cat"].values()), Decimal(0))
+                + sn.manual
+            )
+    assert services.purge_history(db) == {"snapshots": 0, "fills": 0, "funding": 0, "stake_events": 0}
+    dv = services.dashboard(db, config, now=NOW)
+    points = services.patrimoine_series(db, dv, NOW)
+    assert all(sum(p.values(), Decimal(0)) < d(100000) for _, p in points)
+
+
+def test_purge_keeps_same_address_on_other_network(tmp_path):
+    from wallet_crypto.db.models import HlFill
+
+    db = Database(tmp_path / "p.db")
+    db.init()
+    addr = "0x4444444444444444444444444444444444444444"
+    with db.session() as s:
+        hl = store.add_wallet(s, "HL", addr)
+        evm = store.add_wallet(s, "EVM", addr)
+        hl_id, evm_id = hl.id, evm.id
+        store.store_fills(s, [{"address": addr, "tid": 1, "coin": "BTC", "side": "B", "px": d(1), "sz": d(1),
+                               "start_position": d(0), "closed_pnl": d(0), "fee": d(0), "builder_fee": d(0),
+                               "time_ms": 1, "is_spot": False}])  # fmt: skip
+        store.store_stake_events(s, [
+            {"source": "WCT_OP", "address": addr, "asset": "WCT", "time_ms": 1, "kind": "DEPOSIT", "qty": d(3497651), "ext_id": "w1"},
+            {"source": "HL_HYPE", "address": addr, "asset": "HYPE", "time_ms": 1, "kind": "DEPOSIT", "qty": d(10), "ext_id": "h1"},
+        ])  # fmt: skip
+    services.delete_wallet(db, evm_id)
+    with db.session() as s:
+        assert s.query(HlFill).count() == 1
+        assert [e.source for e in s.query(StakeEventRow)] == ["HL_HYPE"]
+    services.delete_wallet(db, hl_id)
+    with db.session() as s:
+        assert s.query(HlFill).count() == 0 and s.query(StakeEventRow).count() == 0
+
+
+def test_open_positions_moved_to_trades(demo):
+    _, db = demo
+    pos = services.open_positions(db)
+    assert {p["coin"] for p in pos} == {"ETH", "BTC"} and any(p["auto"] for p in pos)
+    assert services.open_positions(db, ["0x1111111111111111111111111111111111111111"])[0]["coin"] == "ETH"

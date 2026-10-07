@@ -6,11 +6,11 @@ import inspect
 
 from nicegui import ui
 
-from .. import auth, backup
+from .. import auth, backup, services
 from ..log import add_secret
 from ..security import mask_secret
 from ..settings import save_setting
-from .components import alert, page_title, when
+from .components import alert, confirm, page_title, when
 from .context import ctx
 
 ALCHEMY_STEPS = [
@@ -182,6 +182,50 @@ def render(go_to, apply_theme) -> None:
                         "Supprimer le mot de passe",
                         on_click=lambda: (save_setting(c.db, "password_hash", None), refresh()),
                     ).props("flat no-caps color=negative")
+
+    # ------------------------------------------------------------ Historique
+    with _section(
+        "Historique du patrimoine",
+        "Une adresse ajoutée par erreur (un contrat, l'adresse de quelqu'un d'autre) reste dans les relevés "
+        "passés et les courbes même après sa suppression. Le nettoyage retire, pour chaque wallet supprimé, "
+        "sa part de chaque relevé et son historique importé. Les wallets suivis, même en pause, ne sont pas touchés.",
+    ):
+
+        def do_purge():
+            def yes():
+                try:
+                    keep = backup.export_bytes(c.db)
+                    backups = c.base_config.data_dir / "backups"
+                    backups.mkdir(exist_ok=True)
+                    (
+                        backups / f"avant-nettoyage-{__import__('time').strftime('%Y%m%d-%H%M%S')}.db"
+                    ).write_bytes(keep)
+                except backup.BackupError:
+                    pass
+                n = services.purge_history(c.db)
+                if not any(n.values()):
+                    ui.notify("Rien à nettoyer : l'historique ne contient aucun wallet supprimé.")
+                else:
+                    ui.notify(
+                        f"Nettoyé : {n['snapshots']} relevé(s) corrigé(s), {n['fills']} fill(s), "
+                        f"{n['funding']} funding, {n['stake_events']} mouvement(s) de staking retirés. "
+                        "Copie de la base gardée dans data/backups.",
+                        type="positive",
+                        multi_line=True,
+                    )
+                refresh()
+
+            confirm(
+                "Nettoyer l'historique ?",
+                "Les wallets supprimés sont retirés des relevés passés et de l'historique importé. "
+                "Une copie de la base est gardée dans data/backups avant l'opération.",
+                yes,
+                yes_label="Nettoyer",
+            )
+
+        ui.button("Nettoyer l'historique", icon="cleaning_services", on_click=do_purge).props(
+            "outline no-caps"
+        )
 
     # ------------------------------------------------------------ Données
     with _section(

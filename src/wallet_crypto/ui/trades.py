@@ -273,6 +273,42 @@ def _manual_section(m: Money, refresh) -> None:
                 ).props("flat no-caps dense padding='3px 10px' color=negative")  # fmt: skip
 
 
+def _open_positions(positions: list[dict], m: Money) -> None:
+    """Positions ouvertes en tête de page (déplacées de l'onglet Wallets)."""
+    if not positions:
+        return
+    upnl = sum((p["upnl"] or 0 for p in positions), 0)
+    with ui.column().classes("wc-card w-full gap-2"):
+        with ui.row().classes("w-full items-center justify-between"):
+            ui.label(f"Positions ouvertes ({len(positions)})").classes("wc-section-title")
+            ui.label(f"PnL latent {m(upnl, True)}").classes(f"font-semibold wc-num {sign_class(upnl)}")
+        with ui.element("div").classes("wc-scroll"), ui.element("table").classes("wc-table text-sm"):
+            with ui.element("tr"):
+                for h, cls in (("Position", ""), ("Compte", ""), ("Taille", "r"), ("Entrée", "r"), ("Valeur", "r"),
+                               ("PnL latent", "r"), ("Levier", "r"), ("Liquidation", "r")):  # fmt: skip
+                    with ui.element("th").classes(cls).props('scope="col"'):
+                        ui.label(h)
+            for p in positions:
+                with ui.element("tr"):
+                    with ui.element("td"):
+                        ui.html(
+                            f'<b>{p["coin"]}</b> <span class="{"wc-pos" if p["side"] == "LONG" else "wc-neg"}">{p["side"]}</span>'
+                        )
+                    with ui.element("td").classes("wc-muted"):
+                        ui.label(p["account"] + (" · auto" if p["auto"] else ""))
+                    for val in (fmt.qty(p["size"], p["entry"]), fmt.number(p["entry"], 4), m(p["value"])):
+                        with ui.element("td").classes("r"):
+                            ui.label(val)
+                    with ui.element("td").classes("r"):
+                        ui.label(f"{m(p['upnl'], True)} ({fmt.pct(p['roe'], 1)})").classes(
+                            sign_class(p["upnl"])
+                        )
+                    with ui.element("td").classes("r"):
+                        ui.label(f"×{fmt.number(p['lev'], 0)}" if p["lev"] else "—")
+                    with ui.element("td").classes("r"):
+                        ui.label(fmt.number(p["liq_px"], 4) if p["liq_px"] else "—")
+
+
 def render(go_to) -> None:
     c = ctx()
     m = money_fmt()
@@ -301,6 +337,7 @@ def render(go_to) -> None:
             )
             sel.on_value_change(lambda e: (STATE.update(accounts=list(e.value or [])), refresh()))
             per.on_value_change(lambda e: (STATE.update(period=e.value), refresh()))
+        _open_positions(services.open_positions(c.db, tv.selected), m)
         if not tv.selected:
             ui.label("Sélectionnez au moins un compte.").classes("wc-muted")
         elif not tv.n_trades:

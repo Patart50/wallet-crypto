@@ -124,7 +124,9 @@ def edit_dialog(w: services.WalletView, refresh) -> None:
 
             confirm(
                 "Ne plus suivre cette adresse ?",
-                "Ses soldes et ses positions sont retirés. L'historique importé (fills, staking) est conservé.",
+                "Ses soldes, ses positions, son historique importé (fills, funding, staking) et sa part dans "
+                "les relevés passés du patrimoine sont retirés. Pour l'arrêter sans rien effacer, "
+                "décochez plutôt « Synchroniser cette adresse ».",
                 yes,
             )
 
@@ -164,35 +166,10 @@ def _hl_detail(w: services.WalletView, m: Money) -> None:
                     + ("Concordant." if ok else f"Écart de {m(gap, True)} : à signaler."),
                 )
     if w.positions:
-        with ui.element("table").classes("wc-table text-sm mt-1"):
-            _table_header(
-                [
-                    ("Position", ""),
-                    ("Taille", "r"),
-                    ("Entrée", "r"),
-                    ("Valeur", "r"),
-                    ("PnL latent", "r"),
-                    ("Levier", "r"),
-                    ("Liquidation", "r"),
-                ]
-            )
-            for p in w.positions:
-                with ui.element("tr"):
-                    with ui.element("td"):
-                        ui.html(
-                            f'<b>{p["coin"]}</b> <span class="{"wc-pos" if p["side"] == "LONG" else "wc-neg"}">{p["side"]}</span>'
-                        )
-                    for val in (fmt.qty(p["size"], p["entry"]), fmt.number(p["entry"], 4), m(p["value"])):
-                        with ui.element("td").classes("r"):
-                            ui.label(val)
-                    with ui.element("td").classes("r"):
-                        ui.label(f"{m(p['upnl'], True)} ({fmt.pct(p['roe'], 1)})").classes(
-                            sign_class(p["upnl"])
-                        )
-                    with ui.element("td").classes("r"):
-                        ui.label(f"×{fmt.number(p['lev'], 0)}" if p["lev"] else "—")
-                    with ui.element("td").classes("r"):
-                        ui.label(fmt.number(p["liq_px"], 4) if p["liq_px"] else "—")
+        n = len(w.positions)
+        ui.link(
+            f"{n} position{'s' if n > 1 else ''} ouverte{'s' if n > 1 else ''} : voir Trades", "/trades"
+        ).classes("wc-link text-sm")
 
 
 def _table_header(cols: list[tuple[str, str]]) -> None:

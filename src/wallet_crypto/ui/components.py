@@ -73,7 +73,8 @@ def avatar(symbol: str, size: int = 34) -> None:
 def kpi(
     label: str, value: str, sub: str | None = None, sub_class: str = "wc-muted", dot: str | None = None
 ) -> None:
-    with ui.column().classes("wc-card-2 gap-1 min-w-[150px] flex-1"):
+    # self-stretch : toutes les cases d'une rangée ont la même hauteur, sous-ligne ou non
+    with ui.column().classes("wc-card-2 gap-1 min-w-[150px] flex-1 self-stretch justify-start"):
         with ui.row().classes("items-center gap-2"):
             if dot:
                 ui.html(f'<span class="wc-dot" style="background:{dot}"></span>')

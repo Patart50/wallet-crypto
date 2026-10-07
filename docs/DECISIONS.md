@@ -91,3 +91,12 @@ Premier essai réel d'Arnaud (7 oct. 2026, Ubuntu) : le conteneur redémarrait e
 
 ## D-030 ✅ Couleur des boutons en thème sombre
 Les boutons pleins et interrupteurs (couleur Quasar « primary ») passent de `#8ea6ff` à `#4f6ae0` en sombre : texte blanc à 4,7:1 (AA) au lieu de 2,3:1, et 3,5:1 contre la surface. La règle CSS qui devait foncer le texte était écrasée par la classe `text-white` de Quasar. Liens, onglet actif et anneau de focus gardent `#8ea6ff`. Précise D-023.
+
+## D-031 ✅ Supprimer un wallet efface aussi son passé
+Cas réel d'Arnaud (7 oct. 2026) : l'adresse du contrat WCT saisie par erreur a ajouté 3,5 M$ aux relevés ; supprimer le wallet ne retirait pas sa part des relevés passés, donc les courbes restaient faussées. Désormais, supprimer un wallet retire sa part de chaque relevé (liquide, hold, staké, total, détail par wallet) et l'historique importé de l'adresse (fills, funding, mouvements de staking), sauf si la même adresse reste suivie sur ce réseau (`store.purge_orphans`). Pour suspendre un wallet sans effacer son passé : « Synchroniser cette adresse » désactivé. Pour les bases où la suppression a déjà eu lieu : Réglages → « Historique du patrimoine » → « Nettoyer l'historique », qui garde d'abord une copie dans `data/backups/avant-nettoyage-*.db`. Les relevés nettoyés portent la liste des wallets retirés (`purged_wallets`).
+
+## D-032 ✅ Positions ouvertes dans Trades, cases de même hauteur
+Demandes d'Arnaud (7 oct. 2026). Les positions Hyperliquid ouvertes quittent le détail de Wallets pour le haut de l'écran Trades (tous comptes, filtre de comptes appliqué, PnL latent total) ; Wallets garde un lien. Les cases de chiffres d'une même ligne (Hold, Staking, Trades) prennent toutes la hauteur de la plus haute.
+
+## D-033 ⏳ Connecteurs vers d'autres plateformes
+Rappel d'Arnaud (7 oct. 2026), précise D-014 : prévoir le branchement d'autres plateformes par API. Reste hors v1.0. Principe retenu : clé API en lecture seule, sans droit de trade ni de retrait (refusée sinon si la plateforme permet de le vérifier), une classe de source par plateforme, soldes puis historique de trades, remplacement progressif des trades saisis à la main (D-016). Plateformes à fixer avec Arnaud selon celles qu'il utilise.

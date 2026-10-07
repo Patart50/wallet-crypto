@@ -226,11 +226,23 @@ def update_wallet(db: Database, wallet_id: int, **fields: Any) -> None:
             w.auto_trading = False
 
 
-def delete_wallet(db: Database, wallet_id: int) -> None:
+def delete_wallet(db: Database, wallet_id: int, purge: bool = True) -> dict[str, int] | None:
+    """Ne plus suivre une adresse. ``purge`` : retire aussi sa part des relevés passés et son
+    historique importé (D-031), sauf si la même adresse reste suivie sur le même réseau."""
     with db.session() as s:
         w = s.get(Wallet, wallet_id)
         if w is not None:
             s.delete(w)
+    if not purge:
+        return None
+    with db.session() as s:
+        return store.purge_orphans(s)
+
+
+def purge_history(db: Database) -> dict[str, int]:
+    """Nettoie l'historique de tout wallet supprimé (Réglages)."""
+    with db.session() as s:
+        return store.purge_orphans(s)
 
 
 def add_wallets(
@@ -576,6 +588,38 @@ class TradesView:
     by_coin: dict[str, dict]
     live: dict[tuple[str, str], dict]
     n_trades: int
+
+
+def open_positions(db: Database, selected: list[str] | None = None) -> list[dict]:
+    """Positions Hyperliquid ouvertes à la dernière synchronisation, compte par compte."""
+    out = []
+    with db.session() as s:
+        for w in store.list_wallets(s):
+            if w.network != "HL" or (selected is not None and w.address not in selected):
+                continue
+            for p in s.scalars(select(HlPosition).where(HlPosition.wallet_id == w.id)):
+                out.append(
+                    {
+                        "account": f"{w.group_name} / {w.label}",
+                        "auto": w.auto_trading,
+                        **{
+                            c: getattr(p, c)
+                            for c in (
+                                "coin",
+                                "side",
+                                "size",
+                                "entry",
+                                "value",
+                                "upnl",
+                                "lev",
+                                "liq_px",
+                                "roe",
+                            )
+                        },
+                    }
+                )
+    out.sort(key=lambda p: -abs(p["value"] or 0))
+    return out
 
 
 def hl_accounts(db: Database) -> dict[str, tuple[str, bool]]:

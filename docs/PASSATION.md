@@ -1,4 +1,4 @@
-# Passation — wallet-crypto (7 octobre 2026, 6 h)
+# Passation — wallet-crypto (7 octobre 2026, 17 h)
 
 À lire après `claude/PROGRAMME.md`. Compléter avec `claude/wallet-crypto/SPEC.md` et `DECISIONS.md` (aussi dans `docs/` du dépôt).
 
@@ -16,9 +16,11 @@ Suivi de patrimoine crypto auto-hébergé en Python (NiceGUI, SQLite), pour util
 ## Où on en est
 
 - **J1 fusionné** (PR #1) : moteur en `Decimal`, sources, base, synchronisation, CLI.
-- **J2 en PR #2** (branche `j2-interface`) : interface NiceGUI complète, synchronisation automatique, prix courants (5 min) et historiques (cache journalier rempli pendant la sync), mot de passe, export/import, démonstration `serve --demo`, Docker, tests de fumée de l'interface. 111 tests, CI verte (Python 3.11 et 3.13, image Docker). Vérifié dans Chromium : 7 pages en sombre, clair et mobile, aucune requête externe, aucune erreur console, QR codes décodés identiques aux adresses, navigation au clavier avec focus visible.
+- **J2 fusionné** (PR #2, #4, #5) : interface NiceGUI complète, synchronisation automatique, prix courants (5 min) et historiques (cache journalier rempli pendant la sync), mot de passe, export/import, démonstration `serve --demo`, Docker, tests de fumée de l'interface. 111 tests, CI verte (Python 3.11 et 3.13, image Docker). Vérifié dans Chromium : 7 pages en sombre, clair et mobile, aucune requête externe, aucune erreur console, QR codes décodés identiques aux adresses, navigation au clavier avec focus visible.
+- **Corrections d'usage en PR** (branche `corrections-usage`), après le premier essai réel d'Arnaud sous Docker : nettoyage de l'historique des wallets supprimés (D-031, cas de l'adresse du contrat WCT saisie par erreur), positions ouvertes en haut de Trades et cases de même hauteur (D-032). 113 tests. Arnaud doit, après fusion : `git pull && sudo docker compose up -d --build`, puis Réglages → « Nettoyer l'historique ».
+- Connecteurs d'autres plateformes : D-033, après la v1.0 ; plateformes à demander à Arnaud.
 - D-013 validée par Arnaud (7 oct. 2026) : `Decimal` partout.
-- Reste à Arnaud : relire et fusionner ; tester en réel avec ses adresses : `docker compose up -d` ou `wallet-crypto serve`, ajouter les wallets, coller la clé, Synchroniser, et remonter les écarts (aucun appel réel possible depuis l'environnement de Claude).
+- Arnaud fait tourner l'outil en réel sous Docker depuis le 7 oct. 2026 (« tout est bon », calculs justes). Reste à lui : fusionner la PR des corrections, nettoyer son historique, remonter les écarts suivants (aucun appel réel possible depuis l'environnement de Claude).
 
 ## Repères dans le code
 

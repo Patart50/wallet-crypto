@@ -102,8 +102,9 @@ Tables : `wallet` (avec `auto_trading`, `last_error`), `balance_line`, `hl_posit
 
 - **J1** ✅ (PR #1) Squelette du paquet, moteur pur réécrit et testé (patrimoine, staking, hold, trades HL et manuels, gains), sources avec tests sur réponses fictives, base SQLite, synchronisation, CLI, CI (ruff, pytest, comparaison des adresses de don).
 - **J2** ✅ (PR #2) Interface complète, synchronisation automatique, prix courants et historiques, guide Alchemy dans l'interface, mot de passe, export/import, démonstration, Docker, tests de fumée de l'interface.
+- **Corrections d'usage** (D-031, D-032) : nettoyage de l'historique des wallets supprimés, positions ouvertes dans Trades, cases de même hauteur.
 - **J3** v1.0 : migrations Alembic, revue de sécurité (D-010, D-021, D-026), vérification sur données réelles, mesure Alchemy, release.
 
 ## 10. Hors périmètre v1.0
 
-Clés privées et signature de transactions, xpub Bitcoin, plateformes centralisées par API (architecture prête, D-014), calcul d'impôt (pmpa-crypto), IA, multi-utilisateurs, application hébergée.
+Clés privées et signature de transactions, xpub Bitcoin, plateformes centralisées par API (architecture prête, D-014 ; prévues après la v1.0, D-033), calcul d'impôt (pmpa-crypto), IA, multi-utilisateurs, application hébergée.
