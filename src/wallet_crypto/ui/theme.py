@@ -35,7 +35,9 @@ CHART = {
         "surface": "#ffffff",
     },
 }
-ACCENT = {"dark": "#8ea6ff", "light": "#2541b2"}
+# Couleur Quasar « primary » (boutons pleins, interrupteurs). En sombre, l'accent clair #8ea6ff
+# des liens donnerait un texte blanc à 2,3:1 : #4f6ae0 donne 4,7:1 (AA) et 3,5:1 sur la surface.
+ACCENT = {"dark": "#4f6ae0", "light": "#2541b2"}
 FONT_UI = "'Public Sans', system-ui, sans-serif"
 
 
@@ -144,7 +146,6 @@ body { background: var(--wc-bg) !important; color: var(--wc-text); font-family: 
 .wc-prose { max-width: 70ch; line-height: 1.6; }
 .wc-prose p { margin: 0 0 .7em; }
 .wc-qr svg { width: 164px; height: 164px; background: #fff; border-radius: var(--wc-radius); padding: 6px; }
-.body--dark .q-btn.bg-primary { color: var(--wc-on-accent) !important; }
 .wc-upload { max-width: 420px; }
 .wc-upload .q-uploader__list { display: none; }
 .wc-upload .q-uploader__header { background: var(--wc-surface-2) !important; color: var(--wc-text) !important; border: 1px dashed var(--wc-border-strong); border-radius: var(--wc-radius); }

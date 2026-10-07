@@ -88,3 +88,6 @@ L'écran Trades affiche par défaut tous les comptes Hyperliquid ; un filtre par
 
 ## D-029 ✅ Docker : pas de `no-new-privileges`
 Premier essai réel d'Arnaud (7 oct. 2026, Ubuntu) : le conteneur redémarrait en boucle sur « exec /usr/local/bin/wallet-crypto: operation not permitted ». Cause probable (non confirmée) : AppArmor refuse l'exécution quand `no-new-privileges` est actif, cas connu avec Docker installé en snap ; la CI ne le montrait pas. Le retrait de l'option a suffi. Option retirée du compose par Arnaud (PR #3) et de la CI. Restent : utilisateur non root, aucune capacité (`cap_drop: ALL`), racine en lecture seule, port publié sur 127.0.0.1. Précise D-026.
+
+## D-030 ✅ Couleur des boutons en thème sombre
+Les boutons pleins et interrupteurs (couleur Quasar « primary ») passent de `#8ea6ff` à `#4f6ae0` en sombre : texte blanc à 4,7:1 (AA) au lieu de 2,3:1, et 3,5:1 contre la surface. La règle CSS qui devait foncer le texte était écrasée par la classe `text-white` de Quasar. Liens, onglet actif et anneau de focus gardent `#8ea6ff`. Précise D-023.
