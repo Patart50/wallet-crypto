@@ -45,7 +45,10 @@ def qty(d: Decimal | None, price: Decimal | None = None) -> str:
         return number(d, 4)
     if price:
         return number(d, 2)
-    return number(d.normalize(), max(0, -d.normalize().as_tuple().exponent)) if d != 0 else "0"
+    if d == 0:
+        return "0"
+    places = min(8, max(0, -d.normalize().as_tuple().exponent))
+    return number(d, places).rstrip("0").rstrip(",") if places else number(d, 0)
 
 
 def pct(d: Decimal | None, places: int = 2, signed: bool = True) -> str:

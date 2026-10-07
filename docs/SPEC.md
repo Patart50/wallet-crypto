@@ -1,4 +1,4 @@
-# Spécification — wallet-crypto v0.2
+# Spécification — wallet-crypto v0.3
 
 Suivi de patrimoine crypto auto-hébergé, en Python, en français : soldes réels des wallets (Hyperliquid, EVM, Solana, Bitcoin), staking, hold avec prix moyen, trades Hyperliquid et trades saisis à la main. Public : utilisateurs avertis, à l'aise avec un terminal ou Docker. Projet frère de pmpa-crypto, dca-crypto, renfort-crypto et carnet-crypto. Toute convention est consignée dans [DECISIONS.md](DECISIONS.md).
 
@@ -19,16 +19,15 @@ L'outil **ne calcule aucun impôt** (renvoi vers pmpa-crypto) et **ne demande ja
 ## 2. Installation et lancement (D-002)
 
 ```
-# Python 3.11+ (J1)
-pip install .
-cp .env.example .env        # y coller sa clé Alchemy
-wallet-crypto wallet add HL,EVM 0x…
-wallet-crypto sync          # une synchronisation (--if-due pour cron)
-wallet-crypto status        # patrimoine, sans réseau
+# Docker (recommandé)
+git clone https://github.com/Patart50/wallet-crypto && cd wallet-crypto
+mkdir -p data && docker compose up -d     # http://127.0.0.1:8090
 
-# Docker et interface (J2)
-docker compose up -d        # http://127.0.0.1:8090
-wallet-crypto serve
+# ou Python 3.11+
+pip install .
+wallet-crypto serve                       # interface, http://127.0.0.1:8090
+wallet-crypto serve --demo                # démonstration, données fictives (D-027)
+wallet-crypto sync | status | trades      # ligne de commande, cron
 ```
 
 - Configuration : variables d'environnement ou `.env` (`ALCHEMY_API_KEY`, `WALLET_CRYPTO_DATA`, `WALLET_CRYPTO_TZ`, `WALLET_CRYPTO_SYNC_HOURS`).
@@ -45,7 +44,7 @@ wallet-crypto serve
 | Solana | Alchemy | Alchemy | soldes et prix |
 | Bitcoin | mempool.space | aucune | solde d'une adresse (pas de xpub en v1.0) |
 | Prix courants | Binance, Hyperliquid, Alchemy | aucune | ordre en D-020 ; taux EUR/USD pour l'affichage (D-015) |
-| Prix historiques | Binance (bougies) | aucune | J2 : cache SQLite pour valoriser récompenses et hold dans le temps |
+| Prix historiques | Binance, sinon Hyperliquid (bougies journalières) | aucune | cache SQLite, mis à jour pendant la synchronisation (D-022) |
 
 Sans clé Alchemy, l'outil fonctionne pour Hyperliquid et Bitcoin ; EVM et Solana échouent avec un message qui renvoie au guide du README.
 
@@ -55,7 +54,8 @@ Chaque source est une classe enregistrée dans un registre (`sources/base.py`, D
 
 Code : `sync.py`.
 
-- Automatique toutes les 6 h tant que le serveur tourne (J2), commande `wallet-crypto sync [--if-due]` pour cron.
+- Automatique selon la fréquence des Réglages (6 h par défaut) tant que le serveur tourne, bouton « Synchroniser », commande `wallet-crypto sync [--if-due]` pour cron.
+- Prix historiques mis à jour à la fin de chaque synchronisation (D-022) ; prix courants rafraîchis toutes les 5 min par le serveur (D-024).
 - Verrou de fichier (`data/sync.lock`, création atomique, repris s'il a plus de 15 min) : jamais deux synchronisations simultanées.
 - Une source en échec n'écrase pas les anciens soldes du wallet ; l'erreur est notée sur le wallet.
 - L'échec d'un historique n'annule pas les soldes du même wallet.
@@ -86,21 +86,22 @@ Tables : `wallet` (avec `auto_trading`, `last_error`), `balance_line`, `hl_posit
 
 `wallet add RÉSEAUX ADRESSE [--label] [--group] [--no-staking] [--auto-trading]`, `wallet list`, `wallet remove ID`, `sync [--if-due]`, `status [--eur]`, `trades`, `about`, `serve` (J2). Console sobre (résumé) ; journal détaillé dans `data/logs/wallet-crypto.log`, `-v` pour l'afficher.
 
-## 8. Interface (J2 — NiceGUI, sombre par défaut, D-009)
+## 8. Interface (NiceGUI, sombre par défaut, D-009, D-023)
 
-- **Barre patrimoine** : total, liquidités, hold, staking, évolution depuis le 1er snapshot, 7 j, 24 h ; actifs sans prix signalés.
+- **Tableau de bord** : total du patrimoine, évolution depuis le premier relevé, 7 j, 24 h, barre de composition par poste, patrimoine par poste (aire empilée), principaux actifs, gains cumulés par poste depuis un départ au choix ; actifs sans prix et doublons signalés.
 - **Wallets** : ajout d'adresses (plusieurs réseaux pour une même adresse 0x, ajout en masse), groupes, case « trading automatique » (D-011), détail des comptes HL et positions ouvertes, dernière sync et erreur.
 - **Staking** : cartes automatiques (HYPE, WCT, vaults) puis positions manuelles, doublons signalés et exclus.
 - **Hold** : une carte par actif, alertes, saisie d'achats, ventes et frais, historique du PMP.
 - **Trades** : statistiques globales, une carte par actif, derniers trades visibles, le reste en tiroir, filtres comptes et période ; trades saisis à la main.
-- **Graphiques** : patrimoine par poste (aire empilée), gains cumulés par poste, répartition actuelle.
-- **Réglages** : clé Alchemy (masquée), devise d'affichage, fréquence de sync, export et import de la base.
+- **Graphiques** : un axe, légende, info-bulle avec tous les montants, tableau « Voir les données » sous chacun.
+- **Réglages** : clé Alchemy (masquée, guide pas à pas), devise et thème, fréquence de synchronisation, mot de passe (D-021), export et import de la base (D-025).
+- **Accès** : écoute sur 127.0.0.1 ; ailleurs, mot de passe obligatoire ; connexion sur `/connexion`.
 - **À propos et limites**, auteur et soutien (D-012).
 
 ## 9. Jalons
 
 - **J1** ✅ Squelette du paquet, moteur pur réécrit et testé (patrimoine, staking, hold, trades HL et manuels, gains), sources avec tests sur réponses fictives, base SQLite, synchronisation, CLI, CI (ruff, pytest, comparaison des adresses de don).
-- **J2** Interface complète, synchronisation automatique, prix historiques, guide Alchemy dans l'interface, Docker.
+- **J2** ✅ (PR #2) Interface complète, synchronisation automatique, prix courants et historiques, guide Alchemy dans l'interface, mot de passe, export/import, démonstration, Docker, tests de fumée de l'interface.
 - **J3** v1.0 : migrations Alembic, README avec captures, À propos et limites, revue de sécurité (D-010), vérification sur données réelles.
 
 ## 10. Hors périmètre v1.0

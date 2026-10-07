@@ -2,6 +2,23 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions selon [SemVer](https://semver.org/lang/fr/).
 
+## 0.2.0 — J2 : interface web, Docker
+
+### Ajouté
+- Interface web en français (`wallet-crypto serve`, http://127.0.0.1:8090) : tableau de bord (patrimoine, évolution, composition, gains cumulés par poste), Wallets, Staking, Hold, Trades, Réglages, À propos et limites. Thème sombre et clair, mobile, navigation au clavier.
+- Saisies dans l'interface : adresses (en masse, plusieurs réseaux), achats, ventes et frais du hold, positions de staking manuelles (dépôts, retraits, récompenses, changements de taux), trades d'autres plateformes.
+- Synchronisation automatique selon une fréquence réglable, bouton « Synchroniser », prix courants rafraîchis toutes les 5 minutes.
+- Prix historiques journaliers (Binance, sinon Hyperliquid) mis en cache pendant la synchronisation, pour valoriser récompenses et hold dans le temps.
+- Clé Alchemy saisissable dans les Réglages, avec guide pas à pas ; la variable d'environnement reste prioritaire.
+- Mot de passe de l'interface, obligatoire hors de la machine locale.
+- Export et import de la base.
+- Démonstration avec données fictives : `wallet-crypto serve --demo`.
+- Image Docker non root et `docker-compose.yml` publié sur 127.0.0.1 seulement.
+- Auteur et soutien avec QR codes générés localement.
+
+### Modifié
+- L'écran Trades montre tous les comptes Hyperliquid par défaut.
+
 ## 0.1.0 — J1 : moteur, sources, base, ligne de commande
 
 ### Ajouté

@@ -1,0 +1,27 @@
+# docker compose up -d   →   http://127.0.0.1:8090
+#
+# Le port n'est publié que sur 127.0.0.1 : l'interface reste accessible depuis cette machine
+# seulement. Pour y accéder depuis un autre appareil, définissez WALLET_CRYPTO_PASSWORD dans
+# .env AVANT de changer « 127.0.0.1:8090 » : la page révèle tout votre patrimoine.
+services:
+  wallet-crypto:
+    build: .
+    image: wallet-crypto:local
+    container_name: wallet-crypto
+    restart: unless-stopped
+    # même utilisateur que le propriétaire du dossier ./data (créez-le avant : mkdir -p data)
+    user: "${UID:-1000}:${GID:-1000}"
+    env_file:
+      - path: .env
+        required: false
+    ports:
+      - "127.0.0.1:8090:8090"
+    volumes:
+      - ./data:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL

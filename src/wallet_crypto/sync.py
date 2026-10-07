@@ -13,6 +13,7 @@ import logging
 from dataclasses import dataclass, field
 from decimal import Decimal
 
+from . import history
 from .config import Config
 from .core.assets import asset_base
 from .core.portfolio import auto_stake_bases, portfolio_summary
@@ -126,8 +127,11 @@ def run_sync(
 ) -> SyncReport:
     import time as _time
 
+    from .settings import effective_config
+
     t0 = _time.monotonic()
     now = now or store.now_ms()
+    config = effective_config(db, config)
     http = http or Http(config.secrets)
     lock = FileLock(config.lock_path)
     try:
@@ -164,6 +168,13 @@ def run_sync(
             except Exception as exc:
                 log.exception("Snapshot : %s", exc)
                 report.warnings.append(("snapshot", str(exc)))
+            try:  # prix historiques : seulement ici, jamais depuis l'interface (D-022)
+                with db.session() as s:
+                    pairs = market.hl_pairs or store.kv_get(s, "hl_spot_pairs", {}) or {}
+                    history.update_cache(s, http, market.ticker, market.hl_mids, pairs, now)
+            except Exception as exc:
+                log.exception("Prix historiques : %s", exc)
+                report.warnings.append(("prix historiques", str(exc)))
         report.duration_s = round(_time.monotonic() - t0, 1)
         with db.session() as s:
             r = s.get(SyncRun, run_id)

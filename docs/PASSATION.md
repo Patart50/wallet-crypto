@@ -1,4 +1,4 @@
-# Passation — wallet-crypto (6 octobre 2026, 19 h 30)
+# Passation — wallet-crypto (7 octobre 2026, 6 h)
 
 À lire après `claude/PROGRAMME.md`. Compléter avec `claude/wallet-crypto/SPEC.md` et `DECISIONS.md` (aussi dans `docs/` du dépôt).
 
@@ -7,6 +7,7 @@
 Suivi de patrimoine crypto auto-hébergé en Python (NiceGUI, SQLite), pour utilisateurs avertis : wallets HL / EVM / Solana / Bitcoin, patrimoine sans double comptage, staking intégré (HYPE, WCT, manuel), hold avec PMP, trades Hyperliquid et trades saisis à la main. Chaque utilisateur fournit sa clé Alchemy. Dérivé du module wallet de Titan, réécrit sans dépendance (wallet D-003). Auteur : « Arnaud (Patart50) », jamais de nom de famille.
 
 - Dépôt : https://github.com/Patart50/wallet-crypto (AGPL-3.0). Pas de site statique : pas de Pages.
+- Choix d'Arnaud (6 oct. 2026) : Python plutôt que navigateur, nom `wallet-crypto`, staking intégré, trades saisis à la main conservés, plateformes centralisées à prévoir, devise $ par défaut et € en option.
 - Méthode : `add_repo` Patart50/wallet-crypto en push, une branche et une PR par jalon, PR via `env -u GH_TOKEN gh api repos/Patart50/wallet-crypto/pulls`. Avant chaque PR : `ruff check src tests`, `ruff format --check src tests`, `pytest`. Tags et releases : Arnaud.
 - Clone superficiel : après `git push -u`, `git config --add remote.origin.fetch '+refs/heads/<b>:refs/remotes/origin/<b>'` puis `git fetch origin <b>`.
 - Environnement de Claude : **aucun accès réseau** à Hyperliquid, Alchemy, mempool.space ni Binance (proxy). Tout est testé sur des réponses fictives (`tests/fixtures/`, `FakeHttp` dans `tests/conftest.py`) calquées sur le code Titan qui tourne en réel. La vérification sur données réelles est à faire par Arnaud.
@@ -14,26 +15,30 @@ Suivi de patrimoine crypto auto-hébergé en Python (NiceGUI, SQLite), pour util
 
 ## Où on en est
 
-- **J1 en PR #1** (branche `j1-moteur`) : moteur en `Decimal`, sources (registre extensible), base SQLite, synchronisation avec verrou, CLI, CI. 90 tests.
-- Reste à Arnaud : relire et fusionner ; **trancher D-013** (il a demandé `float`, Claude a gardé `Decimal` et expliqué pourquoi) ; tester en réel `wallet-crypto sync` avec ses adresses (sans jamais les commiter) et remonter les écarts.
+- **J1 fusionné** (PR #1) : moteur en `Decimal`, sources, base, synchronisation, CLI.
+- **J2 en PR #2** (branche `j2-interface`) : interface NiceGUI complète, synchronisation automatique, prix courants (5 min) et historiques (cache journalier rempli pendant la sync), mot de passe, export/import, démonstration `serve --demo`, Docker, tests de fumée de l'interface. 110 tests. Vérifié dans Chromium : 7 pages en sombre, clair et mobile, aucune requête externe, aucune erreur console, QR codes décodés identiques aux adresses, navigation au clavier avec focus visible.
+- Reste à Arnaud : relire et fusionner ; **trancher D-013** (toujours `Decimal`, sans réponse) ; tester en réel avec ses adresses : `docker compose up -d` ou `wallet-crypto serve`, ajouter les wallets, coller la clé, Synchroniser, et remonter les écarts (aucun appel réel possible depuis l'environnement de Claude).
 
 ## Repères dans le code
 
-- `src/wallet_crypto/core/` : `assets.py` (lignes, valorisation), `portfolio.py`, `staking.py`, `hold.py`, `trades.py`, `manual_trades.py`, `gains.py`.
-- `src/wallet_crypto/sources/` : `base.py` (registre, `BalanceResult`, `HistoryBatch`), `http.py`, `hyperliquid.py`, `alchemy.py` (EVM, Solana, WCT), `mempool.py`, `binance.py`.
+- `src/wallet_crypto/core/` : moteur pur (`assets`, `portfolio`, `staking`, `hold`, `trades`, `manual_trades`, `gains`).
+- `src/wallet_crypto/sources/` : registre (`base.py`), `http.py`, `hyperliquid.py`, `alchemy.py`, `mempool.py`, `binance.py`.
 - `src/wallet_crypto/db/` : `models.py` (`DecimalText`, `JsonText`), `store.py`.
-- `sync.py` (orchestrateur), `prices.py` (prix courants), `lock.py`, `config.py`, `log.py` (masquage), `security.py` (refus des secrets, contrôle des adresses), `support.py`, `fmt.py`, `cli.py`.
+- `sync.py` (orchestrateur), `prices.py` (prix courants), `history.py` (prix historiques), `settings.py` (réglages en base), `services.py` (tout ce que l'interface lit ou modifie, testable sans NiceGUI), `auth.py`, `backup.py`, `demo.py`, `lock.py`, `config.py`, `log.py`, `security.py`, `support.py`, `fmt.py`, `cli.py`.
+- `src/wallet_crypto/ui/` : `app.py` (cadre, pages, connexion, boucle de fond, `serve`), une page par fichier, `theme.py` (CSS, palette validée), `charts.py`, `components.py`, `context.py`, `static/` (polices OFL, favicon).
+- Vérification visuelle : lancer `wallet-crypto serve --demo --port 8091`, captures Playwright avec `executable_path="/opt/pw-browsers/chromium-1194/chrome-linux/chrome"`. Pour arrêter le serveur, ne pas utiliser `pkill -f` avec un motif présent dans la commande courante (le shell se tue lui-même).
+- Pièges NiceGUI : `.hidden` de Quasar est en `!important` (utiliser `wc-hide-xs`) ; l'anneau de focus des boutons passe par `box-shadow` ; un sous-processus de test doit retirer `PYTEST_CURRENT_TEST` de son environnement.
 
-## J2 (prochain jalon)
+## J3 (prochain jalon, v1.0)
 
-Interface NiceGUI (onglets Wallets, Staking, Hold, Trades, Graphiques, Réglages, À propos), `wallet-crypto serve` sur 127.0.0.1:8090, synchronisation automatique en tâche de fond, prix historiques Binance avec cache SQLite (pour `gains.py`), QR codes de don (`segno`), Dockerfile + compose (non root), saisie de la clé Alchemy dans Réglages.
+Migrations Alembic (D-018), revue de sécurité (D-010, D-021, D-026), vérification sur données réelles d'Arnaud, mesure de la consommation Alchemy (D-004), captures définitives, release.
 
 ## Points ouverts
 
 - D-013 : `Decimal` ou `float` (à confirmer par Arnaud).
 - D-004 : consommation Alchemy réelle d'une synchronisation, à mesurer.
-- Formats d'API non vérifiés en réel depuis l'environnement de Claude : `userAbstraction` (forme de la réponse), réseaux à activer dans l'app Alchemy.
-- Alembic avant la v1.0 (D-018).
+- Formats d'API non vérifiés en réel depuis l'environnement de Claude : `userAbstraction`, `candleSnapshot`, réseaux à activer dans l'app Alchemy.
+- Image Docker validée par la CI uniquement (pas de démon Docker dans l'environnement de Claude).
 
 ## Référence
 

@@ -30,7 +30,7 @@ Comme le principe programme (decimal.js) : calculs en `decimal.Decimal`, stockag
 NiceGUI (déjà maîtrisé, ECharts intégré, rendu soigné en sombre) ; SQLite via SQLAlchemy 2 (un fichier, rien à installer) ; migrations Alembic dès la v1.0 pour que les mises à jour ne cassent pas la base (calendrier : D-018). Thème sombre par défaut, clair disponible. Interface en français. Accessibilité : contraste vérifié, navigation au clavier testée ; pas d'audit axe-core complet promis (composants Quasar). Validé par Arnaud (6 oct. 2026).
 
 ## D-010 ✅ Sécurité réseau
-Écoute sur 127.0.0.1 par défaut. `--host 0.0.0.0` exige un mot de passe (haché, session signée) et affiche un avertissement : la page révèle tout le patrimoine. Clé Alchemy jamais affichée en clair ni écrite dans les journaux (masquée dans les logs de débogage). Conteneur Docker non root. Validé par Arnaud (6 oct. 2026) ; masquage fait en J1, serveur et Docker en J2.
+Écoute sur 127.0.0.1 par défaut. `--host 0.0.0.0` exige un mot de passe (haché, session signée) et affiche un avertissement : la page révèle tout le patrimoine. Clé Alchemy jamais affichée en clair ni écrite dans les journaux (masquée dans les logs de débogage). Conteneur Docker non root. Validé par Arnaud (6 oct. 2026) ; masquage fait en J1, serveur et Docker en J2 (D-021, D-026).
 
 ## D-011 ✅ Trading automatique ou manuel : étiquette explicite
 Remplace la détection par le nom du compte (« maître », « bot », « titan ») : chaque compte HL porte une case « trading automatique ». Sert à séparer les deux postes dans les graphiques et les gains.
@@ -61,3 +61,27 @@ Dans le module d'origine, une position manuelle dont les récompenses ne sont pa
 
 ## D-020 ✅ Prix courants pendant une synchronisation
 Ordre : stablecoin = 1 ; Binance (`XUSDT`, `XUSDC`, `XFDUSD`, `XBTC × BTCUSDT`) ; prix médian Hyperliquid (perp, puis paire spot) ; prix déduit d'une ligne Alchemy du même token. Le prix trouvé est noté sur la ligne (`px_sync`) et dans un cache par actif, chemin compris. Valorisation d'une ligne : valeur fournie par la source > stablecoin > prix courant > prix de la synchronisation > cache ; sans prix, la ligne est signalée et non comptée.
+
+## D-021 ✅ Mot de passe de l'interface
+Haché avec scrypt (bibliothèque standard, sel aléatoire, comparaison en temps constant), 8 caractères minimum. Deux sources : variable `WALLET_CRYPTO_PASSWORD` (prioritaire, hachée au démarrage) ou écran Réglages. Sessions signées par un secret aléatoire gardé dans `data/secret.key` (droits 600). Pages protégées par une redirection HTTP 303 vers `/connexion` ; un échec de connexion attend une seconde. `serve --host` hors boucle locale sans mot de passe : refus de démarrer (sauf `--docker`, D-026).
+
+## D-022 ✅ Prix historiques : clôtures journalières en cache, mises à jour pendant la synchronisation
+Pour valoriser les récompenses au jour de réception et le hold jour par jour (graphique des gains). Table `kline_cache` (symbole, jour UTC, clôture). Source par actif : Binance `XUSDT` puis `XUSDC`, sinon bougies Hyperliquid (`candleSnapshot`, utile pour HYPE). Seuls les actifs utiles sont chargés (achats, ventes, récompenses), à partir de leur premier mouvement, de façon incrémentale. L'interface lit le cache et n'appelle jamais le réseau pour cela. Au-delà de trois jours sans cours : pas de prix plutôt qu'un prix périmé ; l'actif est exclu du hold du graphique et signalé. Remplace un premier essai qui téléchargeait depuis l'interface.
+
+## D-023 ✅ Identité visuelle et graphiques
+Identité du programme (commun-crypto `theme.css`) : papier et encre marine, accent bleu, Public Sans pour l'interface, Source Serif 4 pour le montant du patrimoine, chiffres tabulaires. Polices embarquées (`ui/static/fonts`, licence OFL), aucune ressource externe (vérifié : zéro requête hors du serveur). Sombre par défaut, clair disponible. Séries des graphiques : 5 couleurs fixes par poste, validées par le validateur de palette sur chaque surface (ΔE daltonisme ≥ 8,4 entre voisins ; en clair, 3 séries sous 3:1, d'où valeurs écrites à côté et tableau « Voir les données » sous chaque graphique). Pas d'anneau de répartition (5 parts non séparables entre toutes les paires) : une barre de composition sous le total.
+
+## D-024 ✅ Prix courants rafraîchis par le serveur
+Toutes les 5 minutes tant que l'interface tourne (Binance, puis Hyperliquid) : seuls des noms de paires sont envoyés. Ils valorisent l'écran entre deux synchronisations ; au-delà de 30 minutes sans rafraîchissement, retour aux prix de la dernière synchronisation. Désactivé en démonstration.
+
+## D-025 ✅ Export et import de la base
+Export : copie cohérente par l'API de sauvegarde de SQLite, même pendant une synchronisation. Import : vérifie que le fichier est une base wallet-crypto d'une version prise en charge, garde la base actuelle dans `data/backups/`, puis la remplace.
+
+## D-026 ✅ Docker
+Image `python:3.12-slim`, utilisateur non root, données dans le volume `/data`, vérification de santé. `docker-compose.yml` : port publié sur 127.0.0.1 seulement, racine en lecture seule, aucune capacité, `no-new-privileges`, utilisateur = propriétaire du dossier `./data` de l'hôte. Dans le conteneur, le serveur écoute sur 0.0.0.0 avec `--docker` (option cachée) : autorisé sans mot de passe parce que compose ne publie que sur la boucle locale ; avertissement dans le journal. La CI construit l'image et la lance dans ces conditions.
+
+## D-027 ✅ Démonstration
+`wallet-crypto serve --demo` : base entièrement fictive (graine fixe) dans un dossier séparé `data-demo/`, 90 jours de relevés, trades, staking, saisies, prix historiques fictifs. Aucune API contactée, synchronisation désactivée. Sert aux captures du README et aux tests de l'interface.
+
+## D-028 ✅ Trades : tous les comptes par défaut
+L'écran Trades affiche par défaut tous les comptes Hyperliquid ; un filtre par compte et par période permet d'isoler le trading automatique ou manuel (D-011).

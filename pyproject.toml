@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wallet-crypto"
-version = "0.1.0"
+version = "0.2.0"
 description = "Suivi de patrimoine crypto auto-hébergé : wallets, staking, hold et trades Hyperliquid. Lecture seule, en français."
 readme = "README.md"
 license = "AGPL-3.0-or-later"
@@ -14,6 +14,8 @@ requires-python = ">=3.11"
 dependencies = [
     "sqlalchemy>=2.0",
     "requests>=2.31",
+    "nicegui>=2.20,<4",
+    "segno>=1.6",
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -34,6 +36,9 @@ wallet-crypto = "wallet_crypto.cli:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+"wallet_crypto.ui" = ["static/*.svg", "static/fonts/*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
@@ -46,3 +51,7 @@ src = ["src", "tests"]
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM"]
 ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# NiceGUI : l'imbrication des « with » suit l'arbre de la page, la fusionner nuit à la lecture
+"src/wallet_crypto/ui/*" = ["SIM117"]
