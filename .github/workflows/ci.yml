@@ -47,7 +47,8 @@ jobs:
           for i in $(seq 40); do curl -fsS http://127.0.0.1:8090/a-propos > /dev/null && break; sleep 2; done
           curl -fsS http://127.0.0.1:8090/ | grep -q "Bienvenue"
           test "$(docker exec wc id -u)" = "10001"
-          test -f data/wallet-crypto.db
+          sudo test -f data/wallet-crypto.db   # dossier en 700, propriétaire 10001 (D-035)
+          test "$(sudo stat -c %a data)" = "700"
       - name: Journal du conteneur
         if: always()
         run: docker logs wc || true
