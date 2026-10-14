@@ -64,6 +64,7 @@ Code : `sync.py`.
 - Un snapshot du patrimoine par synchronisation (base des courbes), avec ventilation par wallet et par catégorie.
 - Chaque exécution est enregistrée (`sync_run`) ; `--if-due` ne compte que les synchronisations ayant lu au moins un wallet.
 - Requêtes comptées par service et par méthode, reprises comprises, sans la clé ; dernière synchronisation gardée dans `kv: last_sync_calls`, affichée dans Réglages et par `sync` (D-036).
+- Cumul Alchemy du mois et du jour (`kv: alchemy_usage`) ; après un échec complet, essais espacés (15 min, 30 min…, plafonnés à l'intervalle) (D-040).
 
 ## 5. Calculs
 
