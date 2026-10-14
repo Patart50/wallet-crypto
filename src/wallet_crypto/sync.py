@@ -47,10 +47,45 @@ class SyncReport:
         return sum(n for k, n in self.calls.items() if is_alchemy(k))
 
 
+RETRY_MS = 15 * 60_000  # premier nouvel essai après une synchronisation entièrement en échec
+
+
 def is_due(db: Database, config: Config, now: int) -> bool:
+    """Due si la dernière synchronisation réussie a plus que l'intervalle choisi.
+
+    Après des échecs complets (réseau coupé, clé invalide), les essais s'espacent : 15 min,
+    30 min, 1 h… sans dépasser l'intervalle choisi (D-040). Sans cela, la boucle du serveur
+    relançait une synchronisation chaque minute et consommait le quota Alchemy pour rien.
+    """
+    interval = config.sync_hours * 3600_000
     with db.session() as s:
-        last = store.last_sync(s, ok_only=True)
-    return last is None or now - (last.finished_ms or 0) >= config.sync_hours * 3600_000
+        last_ok = store.last_sync(s, ok_only=True)
+        failures = store.failed_syncs_since(s, last_ok.started_ms if last_ok else None)
+    if last_ok is not None and now - (last_ok.finished_ms or 0) < interval:
+        return False
+    if failures:
+        n, last_try_ms = failures
+        wait = min(RETRY_MS * 2 ** (n - 1), interval)
+        return now - last_try_ms >= wait
+    return True
+
+
+def record_usage(s, calls: dict[str, int], now: int, tz) -> None:
+    """Cumule les requêtes Alchemy du jour et du mois (fuseau de l'utilisateur, D-040)."""
+    from datetime import datetime
+
+    n = sum(v for k, v in calls.items() if is_alchemy(k))
+    local = datetime.fromtimestamp(now / 1000, tz)
+    month, day = local.strftime("%Y-%m"), local.strftime("%Y-%m-%d")
+    u = store.kv_get(s, "alchemy_usage") or {}
+    if u.get("month") != month:
+        u = {"month": month, "month_total": 0, "month_syncs": 0, "since_ms": now}
+    if u.get("day") != day:
+        u["day"], u["day_total"] = day, 0
+    u["month_total"] = int(u.get("month_total", 0)) + n
+    u["month_syncs"] = int(u.get("month_syncs", 0)) + 1
+    u["day_total"] = int(u.get("day_total", 0)) + n
+    store.kv_set(s, "alchemy_usage", u)
 
 
 def _sync_wallet(
@@ -189,6 +224,7 @@ def run_sync(
         }
         with db.session() as s:
             store.kv_set(s, "last_sync_calls", {"ts_ms": now, "calls": report.calls})
+            record_usage(s, report.calls, now, config.tz)
             r = s.get(SyncRun, run_id)
             r.finished_ms = store.now_ms()
             r.status = "ok" if report.n_ok else "error"

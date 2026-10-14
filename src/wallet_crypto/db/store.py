@@ -379,6 +379,15 @@ def kv_set(s: Session, key: str, value: Any) -> None:
         row.value = value
 
 
+def failed_syncs_since(s: Session, since_ms: int | None) -> tuple[int, int] | None:
+    """Échecs complets depuis ``since_ms`` : (nombre, début du dernier), ou ``None``."""
+    q = select(SyncRun.started_ms).where(SyncRun.finished_ms.is_not(None), SyncRun.status == "error")
+    if since_ms is not None:
+        q = q.where(SyncRun.started_ms > since_ms)
+    starts = list(s.scalars(q))
+    return (len(starts), max(starts)) if starts else None
+
+
 def last_sync(s: Session, ok_only: bool = False) -> SyncRun | None:
     """Dernière synchronisation terminée (``ok_only`` : au moins un wallet lu)."""
     q = select(SyncRun).where(SyncRun.finished_ms.is_not(None))

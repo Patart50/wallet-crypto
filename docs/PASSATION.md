@@ -1,4 +1,4 @@
-# Passation — wallet-crypto (7 octobre 2026, 18 h)
+# Passation — wallet-crypto (14 octobre 2026)
 
 À lire après `claude/PROGRAMME.md`. Compléter avec `claude/wallet-crypto/SPEC.md` et `DECISIONS.md` (aussi dans `docs/` du dépôt).
 
@@ -18,10 +18,12 @@ Suivi de patrimoine crypto auto-hébergé en Python (NiceGUI, SQLite), pour util
 - **J1 fusionné** (PR #1) : moteur en `Decimal`, sources, base, synchronisation, CLI.
 - **J2 fusionné** (PR #2, #4, #5) : interface NiceGUI complète, synchronisation automatique, prix courants (5 min) et historiques (cache journalier rempli pendant la sync), mot de passe, export/import, démonstration `serve --demo`, Docker, tests de fumée de l'interface. 111 tests, CI verte (Python 3.11 et 3.13, image Docker). Vérifié dans Chromium : 7 pages en sombre, clair et mobile, aucune requête externe, aucune erreur console, QR codes décodés identiques aux adresses, navigation au clavier avec focus visible.
 - **Corrections d'usage fusionnées** (PR #6), après le premier essai réel d'Arnaud sous Docker : nettoyage de l'historique des wallets supprimés (D-031, cas de l'adresse du contrat WCT saisie par erreur), positions ouvertes en haut de Trades et cases de même hauteur (D-032). 113 tests. Arnaud doit, après fusion : `git pull && sudo docker compose up -d --build`, puis Réglages → « Nettoyer l'historique ».
-- **J3 / v1.0.0 en PR** (branche `j3-v1`) : migrations Alembic automatiques (D-034), revue de sécurité et correctifs (D-035), compteur de requêtes Alchemy (D-036). Version 1.0.0 dans `pyproject.toml`. Après fusion, Arnaud : mise à jour Docker, une synchronisation, relever le nombre de requêtes Alchemy (Réglages) et la consommation dans le tableau de bord Alchemy (pour clore D-004), puis tag et release `v1.0.0`.
-- Connecteurs : D-033 ; Arnaud utilise Hyperliquid et Meria, donc Meria d'abord (D-037), API à documenter avant tout code.
+- **J3 / v1.0.0 fusionnée** (PR #7) : migrations Alembic automatiques (D-034), revue de sécurité et correctifs (D-035), compteur de requêtes Alchemy (D-036). Version 1.0.0 dans `pyproject.toml`.
+- v1.0.0 taguée par Arnaud ; PR #8 (CI sur Node 24) fusionnée.
+- **v1.0.1 en PR** (branche `compteur-maj`) : cumul Alchemy du mois et du jour, essais espacés après un échec complet (D-040).
+- Arnaud n'utilisera pas l'outil lui-même (il garde la version Titan branchée à son bot) : connecteurs à la demande des utilisateurs, section « Demande de configuration » à faire (D-038) ; Meria gardé pour plus tard, API déjà analysée (D-039).
 - D-013 validée par Arnaud (7 oct. 2026) : `Decimal` partout.
-- Arnaud fait tourner l'outil en réel sous Docker depuis le 7 oct. 2026 (« tout est bon », calculs justes). Reste à lui : fusionner la PR des corrections, nettoyer son historique, remonter les écarts suivants (aucun appel réel possible depuis l'environnement de Claude).
+- Arnaud a fait tourner l'outil en réel sous Docker (7-14 oct. 2026, « tout est bon », calculs justes).
 
 ## Repères dans le code
 

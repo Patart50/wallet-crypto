@@ -9,7 +9,9 @@ from __future__ import annotations
 
 import random
 from decimal import Decimal
+from zoneinfo import ZoneInfo
 
+from .config import DEFAULT_TZ
 from .core.assets import AssetLine
 from .db import Database, store
 from .db.models import (
@@ -99,6 +101,21 @@ def build_demo(db: Database, now: int | None = None) -> None:
                     "Hyperliquid · clearinghouseState": 2,
                     "Hyperliquid · userFillsByTime": 2,
                 },
+            },
+        )
+        from datetime import datetime
+
+        local = datetime.fromtimestamp(now / 1000, ZoneInfo(DEFAULT_TZ))
+        store.kv_set(  # cumul fictif du mois (D-040)
+            s,
+            "alchemy_usage",
+            {
+                "month": local.strftime("%Y-%m"),
+                "month_total": 5 * 4 * (local.day - 1) + 5,
+                "month_syncs": 4 * (local.day - 1) + 1,
+                "since_ms": now - (local.day - 1) * 86_400_000,
+                "day": local.strftime("%Y-%m-%d"),
+                "day_total": 5,
             },
         )
 

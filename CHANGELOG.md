@@ -2,6 +2,14 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions selon [SemVer](https://semver.org/lang/fr/).
 
+## 1.0.1
+
+### Corrigé
+- Après une synchronisation entièrement en échec (réseau coupé, clé invalide), le serveur relançait un essai chaque minute et consommait le quota Alchemy. Les essais s'espacent désormais (15 min, 30 min, 1 h…, jusqu'à l'intervalle choisi).
+
+### Modifié
+- Réglages → Clé Alchemy : cumul des requêtes du mois et du jour, en plus du détail de la dernière synchronisation (qui paraissait figé : même nombre à chaque synchronisation).
+
 ## 1.0.0 — J3 : migrations, sécurité, mesure Alchemy
 
 ### Ajouté

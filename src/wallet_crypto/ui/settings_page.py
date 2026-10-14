@@ -11,7 +11,7 @@ from ..log import add_secret
 from ..security import mask_secret
 from ..settings import save_setting
 from ..sources.http import is_alchemy
-from .components import alert, confirm, page_title, when
+from .components import ago, alert, confirm, page_title, when
 from .context import ctx
 
 ALCHEMY_STEPS = [
@@ -279,15 +279,25 @@ def render(go_to, apply_theme) -> None:
 
 
 def _alchemy_usage(c) -> None:
-    """Requêtes Alchemy de la dernière synchronisation (D-036)."""
-    usage = services.last_sync_calls(c.db)
-    if not usage:
+    """Requêtes Alchemy : cumul du mois et du jour, détail de la dernière synchronisation (D-036, D-040)."""
+    last = services.last_sync_calls(c.db)
+    if not last:
         return
-    alchemy = {k.removeprefix("Alchemy · "): n for k, n in usage["calls"].items() if is_alchemy(k)}
+    usage = services.alchemy_usage(c.db, c.config.tz)
+    alchemy = {k.removeprefix("Alchemy · "): n for k, n in last["calls"].items() if is_alchemy(k)}
     total = sum(alchemy.values())
-    with ui.expansion(
-        f"Dernière synchronisation ({when(usage['ts_ms'])}) : {total} requête(s) Alchemy"
-    ).classes("w-full"):
+    title = f"Alchemy ce mois-ci : {usage['month_total']} requête(s)"
+    if usage["day_total"]:
+        title += f", dont {usage['day_total']} aujourd'hui"
+    with ui.expansion(title).classes("w-full"):
+        if usage["since_ms"]:
+            ui.label(
+                f"Compté depuis le {when(usage['since_ms'], with_time=False)}, "
+                f"{usage['month_syncs']} synchronisation(s)."
+            ).classes("wc-muted text-sm")
+        ui.label(
+            f"Dernière synchronisation ({ago(last['ts_ms'])}, {when(last['ts_ms'])}) : {total} requête(s)."
+        ).classes("text-sm")
         if alchemy:
             with ui.element("table").classes("wc-table text-sm max-w-[520px]"):
                 for k, n in alchemy.items():
@@ -296,14 +306,14 @@ def _alchemy_usage(c) -> None:
                             ui.label(k)
                         with ui.element("td").classes("r"):
                             ui.label(str(n))
+        h = c.settings.sync_hours or 6
+        per_day = total * 24 / h
+        ui.label(
+            f"Avec une synchronisation toutes les {h:g} h : environ {per_day:.0f} requêtes par jour, "
+            f"{per_day * 30:.0f} par mois (plus les synchronisations manuelles)."
+        ).classes("wc-muted text-sm")
         ui.label(
             "Alchemy décompte en « unités de calcul », dont le coût varie selon la méthode : la "
             "consommation exacte et ce qu'il reste du forfait gratuit sont dans le tableau de bord "
             "Alchemy, onglet Usage."
-        ).classes("wc-muted text-sm")
-        h = c.settings.sync_hours or 6
-        per_day = total * 24 / h
-        ui.label(
-            f"Avec une synchronisation toutes les {h} h : environ {per_day:.0f} requêtes par jour, "
-            f"{per_day * 30:.0f} par mois (plus les synchronisations manuelles)."
         ).classes("wc-muted text-sm")

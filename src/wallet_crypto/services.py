@@ -871,3 +871,22 @@ def last_sync_calls(db: Database) -> dict | None:
     with db.session() as s:
         v = store.kv_get(s, "last_sync_calls")
     return v if isinstance(v, dict) and v.get("calls") is not None else None
+
+
+def alchemy_usage(db: Database, tz) -> dict:
+    """Cumul Alchemy du mois et du jour en cours (D-040) ; zéro si le mois ou le jour a changé."""
+    from datetime import datetime
+
+    with db.session() as s:
+        u = store.kv_get(s, "alchemy_usage") or {}
+    local = datetime.now(tz)
+    out = {"month_total": 0, "month_syncs": 0, "day_total": 0, "since_ms": None}
+    if u.get("month") == local.strftime("%Y-%m"):
+        out.update(
+            month_total=int(u.get("month_total", 0)),
+            month_syncs=int(u.get("month_syncs", 0)),
+            since_ms=u.get("since_ms"),
+        )
+        if u.get("day") == local.strftime("%Y-%m-%d"):
+            out["day_total"] = int(u.get("day_total", 0))
+    return out
