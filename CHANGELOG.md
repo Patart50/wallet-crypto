@@ -2,6 +2,11 @@
 
 Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), versions selon [SemVer](https://semver.org/lang/fr/).
 
+## 1.0.2
+
+### Sécurité
+- Certificats : `certifi` 2026.10.19 minimum et mise à jour de `ca-certificates` dans l'image Docker. Les versions antérieures acceptaient des certificats TLS forgés avec les clés eMudhra compromises (CVE-2026-111943), ce qui exposait la clé Alchemy à une interception réseau. Reconstruire l'image : `docker compose build --pull --no-cache`.
+
 ## 1.0.1
 
 ### Corrigé
