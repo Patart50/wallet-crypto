@@ -20,7 +20,8 @@ Suivi de patrimoine crypto auto-hébergé en Python (NiceGUI, SQLite), pour util
 - **Corrections d'usage fusionnées** (PR #6), après le premier essai réel d'Arnaud sous Docker : nettoyage de l'historique des wallets supprimés (D-031, cas de l'adresse du contrat WCT saisie par erreur), positions ouvertes en haut de Trades et cases de même hauteur (D-032). 113 tests. Arnaud doit, après fusion : `git pull && sudo docker compose up -d --build`, puis Réglages → « Nettoyer l'historique ».
 - **J3 / v1.0.0 fusionnée** (PR #7) : migrations Alembic automatiques (D-034), revue de sécurité et correctifs (D-035), compteur de requêtes Alchemy (D-036). Version 1.0.0 dans `pyproject.toml`.
 - v1.0.0 taguée par Arnaud ; PR #8 (CI sur Node 24) fusionnée.
-- **v1.0.1 en PR** (branche `compteur-maj`) : cumul Alchemy du mois et du jour, essais espacés après un échec complet (D-040).
+- **v1.0.1 fusionnée** : cumul Alchemy du mois et du jour, essais espacés après un échec complet (D-040).
+- **v1.0.2 en PR** (branche `securite-certificats`) : `certifi>=2026.10.19` et `ca-certificates` à jour dans l'image, après la compromission eMudhra (D-041). Arnaud doit reconstruire : `sudo docker compose build --pull --no-cache && sudo docker compose up -d`.
 - Arnaud n'utilisera pas l'outil lui-même (il garde la version Titan branchée à son bot) : connecteurs à la demande des utilisateurs, section « Demande de configuration » à faire (D-038) ; Meria gardé pour plus tard, API déjà analysée (D-039).
 - D-013 validée par Arnaud (7 oct. 2026) : `Decimal` partout.
 - Arnaud a fait tourner l'outil en réel sous Docker (7-14 oct. 2026, « tout est bon », calculs justes).

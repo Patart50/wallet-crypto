@@ -9,6 +9,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     WALLET_CRYPTO_DATA=/data
 
+# Magasin de certificats du système à jour (eMudhra, CVE-2026-111943, wallet D-041)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends --only-upgrade ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 COPY pyproject.toml README.md LICENSE ./
 COPY src ./src
